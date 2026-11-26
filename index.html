@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>隨身單字片語卡</title>
+<style>
+  :root {
+    --bg: #f3f5f9;
+    --card-bg: #ffffff;
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --purple: #7c3aed;
+    --text-main: #1e293b;
+    --text-sub: #64748b;
+    --border: #e2e8f0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif; }
+  body { background: var(--bg); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; align-items: center; padding: 16px; }
+
+  .container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* 頂部標題與統計 */
+  header { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
+  header h1 { font-size: 1.25rem; font-weight: 700; color: var(--text-main); }
+  .stats-badge { font-size: 0.85rem; background: #e0e7ff; color: var(--primary-dark); padding: 4px 10px; border-radius: 20px; font-weight: 600; }
+
+  /* 篩選列 */
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+  .filter-btn { flex: 1; padding: 8px; border: 1px solid var(--border); background: #fff; border-radius: 8px; font-size: 0.85rem; color: var(--text-sub); cursor: pointer; font-weight: 600; transition: 0.2s; }
+  .filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+  /* 自動循環聽力控制列 */
+  .loop-panel { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+  .loop-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .loop-btn { flex: 1; padding: 10px 12px; border: none; border-radius: 10px; font-size: 0.92rem; font-weight: 700; cursor: pointer; background: #ede9fe; color: var(--purple); transition: 0.15s; }
+  .loop-btn.active { background: var(--purple); color: #fff; }
+  .loop-status { font-size: 0.8rem; color: var(--text-sub); font-weight: 600; white-space: nowrap; }
+  .loop-options { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 0.82rem; color: var(--text-sub); flex-wrap: wrap; }
+  .loop-options label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+  .loop-options input[type="checkbox"] { width: auto; }
+  .loop-options select { width: auto; padding: 4px 8px; font-size: 0.8rem; }
+
+  /* 翻轉卡片區 */
+  .card-scene { width: 100%; height: 280px; perspective: 1000px; cursor: pointer; }
+  .card { width: 100%; height: 100%; position: relative; transition: transform 0.5s; transform-style: preserve-3d; border-radius: 18px; box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
+  .card.is-flipped { transform: rotateY(180deg); }
+  .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background: var(--card-bg); border-radius: 18px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--border); }
+  .card-back { transform: rotateY(180deg); background: #f8fafc; }
+
+  .card-top { display: flex; justify-content: space-between; align-items: center; }
+  .tag { font-size: 0.75rem; padding: 3px 8px; border-radius: 6px; font-weight: 600; background: #f1f5f9; color: var(--text-sub); }
+  .status-dot { font-size: 0.75rem; padding: 3px 8px; border-radius: 6px; font-weight: 600; }
+  .status-mastered { background: #d1fae5; color: #065f46; }
+  .status-learning { background: #fef3c7; color: #92400e; }
+
+  .card-center { text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; gap: 10px; }
+  .word-text { font-size: 1.8rem; font-weight: 800; color: var(--text-main); word-break: break-word; line-height: 1.3; }
+  .meaning-text { font-size: 1.35rem; font-weight: 700; color: var(--primary-dark); }
+  .example-box { background: #fff; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); width: 100%; text-align: left; font-size: 0.9rem; line-height: 1.4; color: #334155; }
+  .hint-text { text-align: center; font-size: 0.78rem; color: #94a3b8; }
+
+  /* 發音按鈕 */
+  .speak-btn { background: #eff6ff; color: var(--primary); border: none; padding: 8px 16px; border-radius: 20px; font-size: 0.9rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+  .speak-btn:active { transform: scale(0.96); }
+
+  /* 切換與熟練度控制鈕 */
+  .nav-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .mark-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  button.action-btn { padding: 12px; border: none; border-radius: 12px; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: 0.15s; }
+  button.action-btn:active { transform: scale(0.98); }
+  .btn-prev, .btn-next { background: #fff; color: var(--text-main); border: 1px solid var(--border); }
+  .btn-review { background: #fef3c7; color: #b45309; }
+  .btn-master { background: var(--success); color: #fff; }
+
+  /* 功能區折疊按鈕 */
+  .manage-toggle { background: none; border: 1px dashed #cbd5e1; color: var(--text-sub); padding: 10px; border-radius: 10px; font-size: 0.9rem; cursor: pointer; font-weight: 600; margin-top: 4px; }
+
+  /* 新增與匯入面板 */
+  .manage-panel { display: none; background: #fff; padding: 16px; border-radius: 14px; border: 1px solid var(--border); flex-direction: column; gap: 12px; }
+  .manage-panel.open { display: flex; }
+  .manage-panel h3 { font-size: 1rem; color: var(--text-main); }
+  input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; }
+  textarea { resize: vertical; min-height: 90px; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-secondary { background: #f1f5f9; color: var(--text-main); border: 1px solid var(--border); font-size: 0.88rem; padding: 10px; }
+  .btn-danger-outline { background: #fff; color: var(--danger); border: 1px solid #fecaca; font-size: 0.85rem; padding: 8px; }
+  .backup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .helper-note { font-size: 0.8rem; color: var(--text-sub); line-height: 1.4; background: #f8fafc; padding: 8px; border-radius: 6px; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>📘 隨身單字片語卡</h1>
+    <span class="stats-badge" id="statsBadge">熟練 0 / 0</span>
+  </header>
+
+  <!-- 篩選列 -->
+  <div class="toolbar">
+    <button class="filter-btn active" onclick="setFilter('all', this)">全部字庫</button>
+    <button class="filter-btn" onclick="setFilter('learning', this)">待複習</button>
+    <button class="filter-btn" onclick="setFilter('mastered', this)">已熟練</button>
+  </div>
+
+  <!-- 自動循環聽力控制列（預設關閉） -->
+  <div class="loop-panel">
+    <div class="loop-top">
+      <button class="loop-btn" id="loopToggleBtn" onclick="toggleLoopMode()">🔁 開始自動循環聽力</button>
+      <span class="loop-status" id="loopStatusText">已停止</span>
+    </div>
+    <div class="loop-options">
+      <label><input type="checkbox" id="optSpeakZh"> 播放中文解釋</label>
+      <label><input type="checkbox" id="optAutoFlip" checked> 播例句時自動翻面</label>
+      <label>
+        停頓：
+        <select id="optPauseSec">
+          <option value="1000">1.0 秒</option>
+          <option value="1800" selected>1.8 秒</option>
+          <option value="2800">2.8 秒</option>
+        </select>
+      </label>
+    </div>
+  </div>
+
+  <!-- 單字翻轉卡 -->
+  <div class="card-scene" onclick="flipCard()">
+    <div class="card" id="flashcard">
+      <!-- 正面 -->
+      <div class="card-face card-front">
+        <div class="card-top">
+          <span class="tag" id="cardType">單字</span>
+          <span class="status-dot status-learning" id="cardStatusFront">待複習</span>
+        </div>
+        <div class="card-center">
+          <div class="word-text" id="wordFront">Loading...</div>
+          <button class="speak-btn" onclick="event.stopPropagation(); speakSingle('word')">🔊 朗讀英文</button>
+        </div>
+        <div class="hint-text">點擊卡片翻面看中文與例句</div>
+      </div>
+
+      <!-- 背面 -->
+      <div class="card-face card-back">
+        <div class="card-top">
+          <span class="tag" id="wordSmallBack">Word</span>
+          <span class="status-dot status-learning" id="cardStatusBack">待複習</span>
+        </div>
+        <div class="card-center">
+          <div class="meaning-text" id="meaningBack">中文解釋</div>
+          <div class="example-box" id="exampleBox">
+            <div id="exampleEn" style="font-weight: 600; margin-bottom: 4px;">Example sentence.</div>
+            <div id="exampleZh" style="color: #64748b; font-size: 0.85rem;">例句中文翻譯</div>
+          </div>
+          <button class="speak-btn" onclick="event.stopPropagation(); speakSingle('example')">🔊 朗讀例句</button>
+        </div>
+        <div class="hint-text">點擊卡片翻回正面</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 熟練度標記 -->
+  <div class="mark-controls">
+    <button class="action-btn btn-review" onclick="markStatus(false)">↺ 還不熟（待複習）</button>
+    <button class="action-btn btn-master" onclick="markStatus(true)">✓ 記住了（已熟練）</button>
+  </div>
+
+  <!-- 上一題 / 下一題 -->
+  <div class="nav-controls">
+    <button class="action-btn btn-prev" onclick="prevCard()">← 上一個</button>
+    <button class="action-btn btn-next" onclick="nextCard()">下一個 →</button>
+  </div>
+
+  <!-- 展開新增字庫面板 -->
+  <button class="manage-toggle" onclick="toggleManage()">＋ 新增單字 / 匯入與備份字庫</button>
+
+  <div class="manage-panel" id="managePanel">
+    <h3>1. 單筆新增</h3>
+    <select id="inType">
+      <option value="單字">單字 (Word)</option>
+      <option value="片語">片語 (Phrase)</option>
+    </select>
+    <input type="text" id="inWord" placeholder="英文單字或片語（例如：take into account）">
+    <input type="text" id="inMeaning" placeholder="中文意思（例如：將……納入考量）">
+    <input type="text" id="inExEn" placeholder="英文例句（選填）">
+    <input type="text" id="inExZh" placeholder="例句中文（選填）">
+    <button class="action-btn btn-primary" onclick="addSingleWord()">加入字庫</button>
+
+    <hr style="border:none; border-top:1px solid var(--border); margin:4px 0;">
+
+    <h3>2. 批量快速匯入（支援多行貼上）</h3>
+    <div class="helper-note">
+      每行一筆，用「|」分隔欄位：<br>
+      <b>英文 | 中文意思 | 英文例句 | 例句中文</b><br>
+      範例：<code>bottleneck | 瓶頸 | Testing is the main bottleneck. | 測試是主要的瓶頸。</code>
+    </div>
+    <textarea id="bulkInput" placeholder="在此貼上多行單字或片語..."></textarea>
+    <button class="action-btn btn-primary" onclick="importBulkWords()">批量匯入</button>
+
+    <hr style="border:none; border-top:1px solid var(--border); margin:4px 0;">
+
+    <h3>3. 備份與跨裝置轉移（JSON）</h3>
+    <div class="helper-note">
+      匯出後可傳到手機或另一台電腦匯入；匯入時可選擇<b>「合併」</b>或<b>「完全覆蓋」</b>。
+    </div>
+    <div class="backup-grid">
+      <button class="action-btn btn-secondary" onclick="exportBackupJson()">💾 匯出備份檔</button>
+      <button class="action-btn btn-secondary" onclick="triggerImportJson()">📂 匯入備份檔</button>
+    </div>
+    <input type="file" id="jsonFileInput" accept=".json,application/json" style="display:none;" onchange="handleImportJsonFile(event)">
+
+    <button class="action-btn btn-danger-outline" onclick="deleteCurrentWord()">🗑️ 刪除目前這張卡片</button>
+  </div>
+</div>
+
+<script>
+  const defaultVocab = [
+    { id: 1, type: "片語", word: "figure out", meaning: "想出、理解、解決", exEn: "We need to figure out why the signal drops.", exZh: "我們需要找出訊號下降的原因。", mastered: false },
+    { id: 2, type: "片語", word: "rule out", meaning: "排除（可能性）", exEn: "We can rule out a power supply issue.", exZh: "我們可以排除電源供應的問題。", mastered: false },
+    { id: 3, type: "單字", word: "verify", meaning: "驗證、核實", exEn: "Please verify the timing parameters before testing.", exZh: "測試前請先驗證時序參數。", mastered: false },
+    { id: 4, type: "片語", word: "narrow down", meaning: "縮小（範圍）", exEn: "This test helps narrow down the root cause.", exZh: "這項測試有助於縮小根本原因的範圍。", mastered: false },
+    { id: 5, type: "單字", word: "intermittent", meaning: "間歇性的、斷斷續續的", exEn: "An intermittent failure is the hardest to debug.", exZh: "間歇性故障是最難除錯的。", mastered: false }
+  ];
+
+  let vocabList = JSON.parse(localStorage.getItem('my_vocab_v1')) || defaultVocab;
+  let currentFilter = 'all';
+  let currentIndex = 0;
+
+  // 安全單步狀態機（無 while 迴圈，防止瀏覽器阻塞）
+  let isLooping = false;
+  let loopGeneration = 0;
+  let stepTimerId = null;
+  let watchdogTimerId = null;
+  let activeUtterance = null; // 保留參考避免被垃圾回收中斷事件
+
+  function saveToStorage() {
+    localStorage.setItem('my_vocab_v1', JSON.stringify(vocabList));
+    updateStats();
+  }
+
+  function getFilteredList() {
+    if (currentFilter === 'learning') return vocabList.filter(item => !item.mastered);
+    if (currentFilter === 'mastered') return vocabList.filter(item => item.mastered);
+    return vocabList;
+  }
+
+  function updateStats() {
+    const masteredCount = vocabList.filter(i => i.mastered).length;
+    document.getElementById('statsBadge').textContent = `熟練 ${masteredCount} / ${vocabList.length}`;
+  }
+
+  function resetTimersAndSpeech() {
+    loopGeneration++;
+    if (stepTimerId !== null) {
+      clearTimeout(stepTimerId);
+      stepTimerId = null;
+    }
+    if (watchdogTimerId !== null) {
+      clearTimeout(watchdogTimerId);
+      watchdogTimerId = null;
+    }
+    activeUtterance = null;
+    if ('speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (e) {}
+    }
+  }
+
+  function stopLoopMode() {
+    isLooping = false;
+    resetTimersAndSpeech();
+    const btn = document.getElementById('loopToggleBtn');
+    btn.classList.remove('active');
+    btn.textContent = '🔁 開始自動循環聽力';
+    document.getElementById('loopStatusText').textContent = '已停止';
+  }
+
+  function toggleLoopMode() {
+    if (isLooping) {
+      stopLoopMode();
+      return;
+    }
+    if (!('speechSynthesis' in window)) {
+      alert("您的瀏覽器不支援語音朗讀功能");
+      return;
+    }
+    const list = getFilteredList();
+    if (list.length === 0) {
+      alert("目前篩選條件下沒有可播放的卡片");
+      return;
+    }
+    isLooping = true;
+    const btn = document.getElementById('loopToggleBtn');
+    btn.classList.add('active');
+    btn.textContent = '⏹ 停止自動循環';
+    startCardCycle();
+  }
+
+  function getPauseMs() {
+    return parseInt(document.getElementById('optPauseSec').value, 10) || 1800;
+  }
+
+  // 單步排程：播完一句才排下一句，絕不使用 while 迴圈
+  function playStepUtterance(text, lang, rate, gen, onStepDone) {
+    if (!isLooping || gen !== loopGeneration) return;
+
+    if (!text) {
+      onStepDone();
+      return;
+    }
+
+    try {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+      window.speechSynthesis.cancel();
+    } catch (e) {}
+
+    // 給瀏覽器語音引擎 80ms 緩衝釋放前一段音訊，避免 Windows Edge/Chrome 語音佇列卡住
+    stepTimerId = setTimeout(() => {
+      if (!isLooping || gen !== loopGeneration) return;
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      utterance.rate = rate;
+      activeUtterance = utterance;
+
+      let finished = false;
+      const finishOnce = () => {
+        if (finished) return;
+        finished = true;
+        if (watchdogTimerId !== null) {
+          clearTimeout(watchdogTimerId);
+          watchdogTimerId = null;
+        }
+        activeUtterance = null;
+        if (isLooping && gen === loopGeneration) {
+          onStepDone();
+        }
+      };
+
+      utterance.onend = finishOnce;
+      utterance.onerror = finishOnce;
+
+      // 看門狗超時保護：避免部分系統語音未回傳 onend 導致停擺
+      const maxWait = Math.min(12000, Math.max(2800, text.length * 160));
+      watchdogTimerId = setTimeout(finishOnce, maxWait);
+
+      try {
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        finishOnce();
+      }
+    }, 80);
+  }
+
+  function startCardCycle() {
+    resetTimersAndSpeech();
+    if (!isLooping) return;
+
+    const gen = loopGeneration;
+    const list = getFilteredList();
+    if (list.length === 0) {
+      stopLoopMode();
+      return;
+    }
+
+    if (currentIndex >= list.length) currentIndex = 0;
+    if (currentIndex < 0) currentIndex = list.length - 1;
+
+    const item = list[currentIndex];
+    const statusEl = document.getElementById('loopStatusText');
+    const speakZh = document.getElementById('optSpeakZh').checked;
+    const autoFlip = document.getElementById('optAutoFlip').checked;
+    const pauseMs = getPauseMs();
+
+    document.getElementById('flashcard').classList.remove('is-flipped');
+
+    // 步驟 1：朗讀英文單字/片語
+    statusEl.textContent = `朗讀英文 (${currentIndex + 1}/${list.length})`;
+    playStepUtterance(item.word, 'en-US', 0.92, gen, () => {
+      stepTimerId = setTimeout(() => {
+        if (!isLooping || gen !== loopGeneration) return;
+
+        // 步驟 2：朗讀英文例句（若有）
+        const afterExample = () => {
+          if (!isLooping || gen !== loopGeneration) return;
+
+          // 步驟 3：朗讀中文解釋（若有勾選）
+          const afterMeaning = () => {
+            if (!isLooping || gen !== loopGeneration) return;
+            statusEl.textContent = `準備下一張...`;
+            stepTimerId = setTimeout(() => {
+              if (!isLooping || gen !== loopGeneration) return;
+              currentIndex = (currentIndex + 1) % list.length;
+              renderCard(false);
+              startCardCycle();
+            }, pauseMs);
+          };
+
+          if (speakZh && item.meaning) {
+            document.getElementById('flashcard').classList.add('is-flipped');
+            statusEl.textContent = `中文解釋 (${currentIndex + 1}/${list.length})`;
+            playStepUtterance(item.meaning, 'zh-TW', 1.0, gen, afterMeaning);
+          } else {
+            afterMeaning();
+          }
+        };
+
+        if (item.exEn) {
+          if (autoFlip) {
+            document.getElementById('flashcard').classList.add('is-flipped');
+          }
+          statusEl.textContent = `朗讀例句 (${currentIndex + 1}/${list.length})`;
+          playStepUtterance(item.exEn, 'en-US', 0.92, gen, () => {
+            stepTimerId = setTimeout(afterExample, Math.min(pauseMs, 1000));
+          });
+        } else {
+          if (autoFlip) {
+            document.getElementById('flashcard').classList.add('is-flipped');
+          }
+          afterExample();
+        }
+      }, Math.min(pauseMs, 1000));
+    });
+  }
+
+  function renderCard(resetFlip = true) {
+    const list = getFilteredList();
+    const cardEl = document.getElementById('flashcard');
+    if (resetFlip) {
+      cardEl.classList.remove('is-flipped');
+    }
+
+    if (list.length === 0) {
+      document.getElementById('cardType').textContent = "提示";
+      document.getElementById('wordFront').textContent = "此分類目前沒有卡片";
+      document.getElementById('meaningBack').textContent = "請切換分類或新增單字";
+      document.getElementById('exampleEn').textContent = "";
+      document.getElementById('exampleZh').textContent = "";
+      return;
+    }
+
+    if (currentIndex >= list.length) currentIndex = 0;
+    if (currentIndex < 0) currentIndex = list.length - 1;
+
+    const item = list[currentIndex];
+    document.getElementById('cardType').textContent = `${item.type} (${currentIndex + 1}/${list.length})`;
+    document.getElementById('wordFront').textContent = item.word;
+    document.getElementById('wordSmallBack').textContent = item.word;
+    document.getElementById('meaningBack').textContent = item.meaning;
+
+    const exBox = document.getElementById('exampleBox');
+    if (item.exEn || item.exZh) {
+      exBox.style.display = 'block';
+      document.getElementById('exampleEn').textContent = item.exEn || '';
+      document.getElementById('exampleZh').textContent = item.exZh || '';
+    } else {
+      exBox.style.display = 'none';
+    }
+
+    const statusText = item.mastered ? "已熟練" : "待複習";
+    const statusClass = item.mastered ? "status-dot status-mastered" : "status-dot status-learning";
+    ['cardStatusFront', 'cardStatusBack'].forEach(id => {
+      const el = document.getElementById(id);
+      el.textContent = statusText;
+      el.className = statusClass;
+    });
+  }
+
+  function flipCard() {
+    document.getElementById('flashcard').classList.toggle('is-flipped');
+  }
+
+  function nextCard() {
+    currentIndex++;
+    renderCard(true);
+    if (isLooping) startCardCycle();
+  }
+
+  function prevCard() {
+    currentIndex--;
+    renderCard(true);
+    if (isLooping) startCardCycle();
+  }
+
+  function setFilter(filter, btn) {
+    currentFilter = filter;
+    currentIndex = 0;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderCard(true);
+    if (isLooping) startCardCycle();
+  }
+
+  function markStatus(isMastered) {
+    const list = getFilteredList();
+    if (list.length === 0) return;
+    const targetId = list[currentIndex].id;
+    const realItem = vocabList.find(i => i.id === targetId);
+    if (realItem) {
+      realItem.mastered = isMastered;
+      saveToStorage();
+      renderCard(true);
+      if (isLooping) startCardCycle();
+    }
+  }
+
+  function speakSingle(mode) {
+    if (isLooping) {
+      stopLoopMode();
+    }
+    const list = getFilteredList();
+    if (list.length === 0) return;
+    const item = list[currentIndex];
+    const textToSpeak = (mode === 'example' && item.exEn) ? item.exEn : item.word;
+
+    if ('speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.lang = 'en-US';
+        utterance.rate = 0.92;
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {}
+    } else {
+      alert("您的瀏覽器不支援語音朗讀功能");
+    }
+  }
+
+  function toggleManage() {
+    document.getElementById('managePanel').classList.toggle('open');
+  }
+
+  function addSingleWord() {
+    const type = document.getElementById('inType').value;
+    const word = document.getElementById('inWord').value.trim();
+    const meaning = document.getElementById('inMeaning').value.trim();
+    const exEn = document.getElementById('inExEn').value.trim();
+    const exZh = document.getElementById('inExZh').value.trim();
+
+    if (!word || !meaning) {
+      alert("請至少填寫「英文」與「中文意思」！");
+      return;
+    }
+
+    vocabList.unshift({
+      id: Date.now(),
+      type, word, meaning, exEn, exZh,
+      mastered: false
+    });
+
+    saveToStorage();
+    ['inWord', 'inMeaning', 'inExEn', 'inExZh'].forEach(id => document.getElementById(id).value = '');
+    currentIndex = 0;
+    renderCard(true);
+    alert("已加入字庫！");
+  }
+
+  function importBulkWords() {
+    const raw = document.getElementById('bulkInput').value.trim();
+    if (!raw) return;
+
+    const lines = raw.split('\n');
+    let addedCount = 0;
+
+    lines.forEach((line, idx) => {
+      const parts = line.split('|').map(s => s.trim());
+      if (parts.length >= 2 && parts[0] && parts[1]) {
+        const isPhrase = parts[0].includes(' ');
+        vocabList.unshift({
+          id: Date.now() + idx,
+          type: isPhrase ? "片語" : "單字",
+          word: parts[0],
+          meaning: parts[1],
+          exEn: parts[2] || "",
+          exZh: parts[3] || "",
+          mastered: false
+        });
+        addedCount++;
+      }
+    });
+
+    if (addedCount > 0) {
+      saveToStorage();
+      document.getElementById('bulkInput').value = '';
+      currentIndex = 0;
+      renderCard(true);
+      alert(`成功匯入 ${addedCount} 筆資料！`);
+    } else {
+      alert("格式不符，請確認每行至少有「英文 | 中文意思」");
+    }
+  }
+
+  function deleteCurrentWord() {
+    const list = getFilteredList();
+    if (list.length === 0) return;
+    if (!confirm(`確定要刪除「${list[currentIndex].word}」嗎？`)) return;
+
+    const targetId = list[currentIndex].id;
+    vocabList = vocabList.filter(i => i.id !== targetId);
+    saveToStorage();
+    renderCard(true);
+  }
+
+  function exportBackupJson() {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const fileName = `vocab_backup_${yyyy}-${mm}-${dd}.json`;
+
+    const payload = {
+      app: "隨身單字片語卡",
+      version: 1,
+      exportedAt: now.toISOString(),
+      count: vocabList.length,
+      items: vocabList
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function triggerImportJson() {
+    const input = document.getElementById('jsonFileInput');
+    input.value = '';
+    input.click();
+  }
+
+  function handleImportJsonFile(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        const rawItems = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.items) ? parsed.items : null);
+
+        if (!rawItems) {
+          alert("備份檔格式不正確，找不到單字清單。");
+          return;
+        }
+
+        const cleanedItems = rawItems
+          .filter(item => item && typeof item.word === 'string' && item.word.trim() && typeof item.meaning === 'string' && item.meaning.trim())
+          .map((item, idx) => ({
+            id: typeof item.id === 'number' ? item.id : Date.now() + idx,
+            type: item.type === '片語' || item.type === '單字' ? item.type : (item.word.trim().includes(' ') ? '片語' : '單字'),
+            word: item.word.trim(),
+            meaning: item.meaning.trim(),
+            exEn: typeof item.exEn === 'string' ? item.exEn.trim() : '',
+            exZh: typeof item.exZh === 'string' ? item.exZh.trim() : '',
+            mastered: Boolean(item.mastered)
+          }));
+
+        if (cleanedItems.length === 0) {
+          alert("備份檔中沒有有效的單字或片語資料。");
+          return;
+        }
+
+        const overwrite = confirm(
+          `讀取到 ${cleanedItems.length} 筆資料。\n\n` +
+          `按「確定」＝ 完全覆蓋目前字庫（以備份檔為主）\n` +
+          `按「取消」＝ 與目前字庫合併（自動略過同英文詞彙）`
+        );
+
+        if (overwrite) {
+          vocabList = cleanedItems;
+          saveToStorage();
+          currentIndex = 0;
+          renderCard(true);
+          alert(`已完全覆蓋還原 ${cleanedItems.length} 筆資料！`);
+        } else {
+          const existingKeys = new Set(vocabList.map(i => i.word.toLowerCase()));
+          let added = 0;
+          cleanedItems.forEach((item, idx) => {
+            const key = item.word.toLowerCase();
+            if (!existingKeys.has(key)) {
+              existingKeys.add(key);
+              vocabList.push({ ...item, id: Date.now() + idx });
+              added++;
+            }
+          });
+          saveToStorage();
+          currentIndex = 0;
+          renderCard(true);
+          alert(`合併完成！新增了 ${added} 筆不重複的詞彙（共 ${vocabList.length} 筆）。`);
+        }
+      } catch (err) {
+        alert("無法解析 JSON 檔案，請確認檔案是否完整。");
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+  }
+
+  // 離開分頁時自動停止語音
+  window.addEventListener('beforeunload', () => {
+    resetTimersAndSpeech();
+  });
+
+  updateStats();
+  renderCard(true);
+</script>
+</body>
+</html>
