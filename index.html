@@ -95,6 +95,7 @@
   input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.9rem; }
   textarea { resize: vertical; min-height: 90px; }
   .btn-primary { background: var(--primary); color: #fff; }
+  .btn-success-soft { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; font-size: 0.88rem; padding: 10px; }
   .btn-secondary { background: #f1f5f9; color: var(--text-main); border: 1px solid var(--border); font-size: 0.88rem; padding: 10px; }
   .btn-danger-outline { background: #fff; color: var(--danger); border: 1px solid #fecaca; font-size: 0.85rem; padding: 8px; }
   .backup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -105,9 +106,16 @@
   .article-header-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
   .article-title { font-size: 0.95rem; font-weight: 700; color: var(--text-main); }
   .article-editor-toggle { background: #f1f5f9; color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
-  .article-editor { display: none; flex-direction: column; gap: 8px; }
+
+  /* 已存短文快速切換列 */
+  .saved-article-bar { display: flex; gap: 6px; align-items: center; }
+  .saved-article-select { flex: 1; padding: 7px 10px; font-size: 0.85rem; border-radius: 8px; border: 1px solid var(--border); background: #f8fafc; color: var(--text-main); font-weight: 600; }
+  .saved-article-del { padding: 7px 10px; border-radius: 8px; border: 1px solid #fecaca; background: #fff; color: var(--danger); font-size: 0.82rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+
+  .article-editor { display: none; flex-direction: column; gap: 8px; padding-top: 4px; border-top: 1px dashed var(--border); }
   .article-editor.open { display: flex; }
   .article-textarea { min-height: 130px; font-size: 0.92rem; line-height: 1.5; }
+  .article-backup-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
   .article-controls { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; }
   .article-play-btn { padding: 11px 12px; border: none; border-radius: 10px; font-size: 0.92rem; font-weight: 700; cursor: pointer; background: var(--primary); color: #fff; }
@@ -287,13 +295,28 @@
         <button class="article-editor-toggle" onclick="toggleArticleEditor()">✏️ 貼上／編輯文章</button>
       </div>
 
-      <!-- 文章貼上／編輯區 -->
+      <!-- 已存短文快速切換與刪除 -->
+      <div class="saved-article-bar">
+        <select class="saved-article-select" id="savedArticleSelect" onchange="onSelectSavedArticle(this.value)">
+          <option value="">-- 選擇已存短文 --</option>
+        </select>
+        <button class="saved-article-del" onclick="deleteCurrentSavedArticle()" title="刪除目前選取的短文">🗑️ 刪除</button>
+      </div>
+
+      <!-- 文章貼上／編輯／存檔／備份區 -->
       <div class="article-editor" id="articleEditor">
+        <input type="text" id="articleTitleInput" placeholder="短文標題（選填，例如：機場入境與搭車）">
         <textarea class="article-textarea" id="articleTextarea" placeholder="在這裡貼上英文短文、對話或新聞段落..."></textarea>
         <div class="backup-grid">
-          <button class="action-btn btn-primary" onclick="applyArticleText(true)">✓ 載入並切句</button>
-          <button class="action-btn btn-secondary" onclick="clearArticleText()">清空文章</button>
+          <button class="action-btn btn-primary" onclick="applyArticleText(false)">✓ 載入並切句</button>
+          <button class="action-btn btn-success-soft" onclick="saveCurrentArticleToLibrary()">💾 儲存到短文庫</button>
         </div>
+        <div class="article-backup-row">
+          <button class="action-btn btn-secondary" onclick="exportArticlesJson()">📤 匯出短文檔</button>
+          <button class="action-btn btn-secondary" onclick="triggerImportArticlesJson()">📥 匯入短文檔</button>
+        </div>
+        <input type="file" id="articleJsonFileInput" accept=".json,application/json" style="display:none;" onchange="handleImportArticlesJsonFile(event)">
+        <button class="action-btn btn-danger-outline" onclick="clearArticleText()">清空目前編輯框</button>
       </div>
 
       <!-- 播放控制 -->
@@ -354,6 +377,24 @@
 
   const defaultArticle = "After a smooth three-hour flight, we finally touched down at the airport just before noon. Since we only had carry-on bags, we cleared customs quickly and picked up a local SIM card right outside the arrival gate. To avoid the midday traffic, we decided to hop on the airport express train instead of taking a taxi. Forty minutes later, we arrived downtown and dropped off our luggage at the hotel front desk before check-in time. Feeling hungry, we wandered down a quiet side street and came across a cozy little ramen shop to grab a quick bite. By late afternoon, we noticed we were running short of cash, so we stopped by a convenience store ATM on the way back. After walking nearly fifteen thousand steps, our feet were pretty sore, so we headed back to our room and called it a day.";
 
+  const defaultSavedArticles = [
+    {
+      id: 1001,
+      title: "機場入境與搭車進市區",
+      text: defaultArticle
+    },
+    {
+      id: 1002,
+      title: "咖啡廳早晨行程討論",
+      text: "Good morning! Did you sleep well, or are you still dealing with a bit of jet lag? Honestly, I woke up around five, so I already unpacked and looked over our itinerary for today. Nice! Let's grab some coffee first before we head out to the harbor market. Sounds like a plan. By the way, do you know if this café takes credit cards, or should we pay in cash? Let me check the sign at the counter. Oh, it says cash only, so good thing I stopped by the ATM earlier. In that case, I'll order two iced lattes and a couple of croissants, and you can pay me back later. Thanks! Let's sit by the window for twenty minutes, take in the morning view, and then hop on the express bus."
+    },
+    {
+      id: 1003,
+      title: "飯店入住與行李寄放",
+      text: "Welcome to the Harbor View Inn! How can I help you today? Hi there. We have a reservation under Charles for three nights, though we might be a bit early for check-in. Let me pull up your booking right away. Your room is still being cleaned by housekeeping, so it will be ready at three. No problem at all. Could we leave our suitcases at the front desk in the meantime? By all means! I'll tag your bags now and store them safely in our luggage room. Also, could you recommend a good local noodle shop within walking distance? Sure! Just cut across the plaza outside, turn left at the crosswalk, and look for a wooden sign on your right."
+    }
+  ];
+
   let vocabList = JSON.parse(localStorage.getItem('my_vocab_v1')) || defaultVocab;
   let currentFilter = 'all';
   let currentIndex = 0;
@@ -366,16 +407,26 @@
   let watchdogTimerId = null;
   let activeUtterance = null;
 
-  // 短文聽力與點字查詢狀態
+  // 短文聽力、短文筆記庫與點字查詢狀態
   let articleSentences = [];
   let articleSentenceIdx = 0;
   let revealedBlindIndices = new Set();
   let translationCache = JSON.parse(localStorage.getItem('my_word_trans_cache_v1') || '{}');
   let currentLookupData = null;
+  let savedArticles = JSON.parse(localStorage.getItem('my_articles_v1') || 'null');
+  if (!Array.isArray(savedArticles)) {
+    savedArticles = defaultSavedArticles.map(item => ({ ...item }));
+    localStorage.setItem('my_articles_v1', JSON.stringify(savedArticles));
+  }
+  let activeSavedArticleId = '';
 
   function saveToStorage() {
     localStorage.setItem('my_vocab_v1', JSON.stringify(vocabList));
     updateStats();
+  }
+
+  function saveSavedArticlesToStorage() {
+    localStorage.setItem('my_articles_v1', JSON.stringify(savedArticles));
   }
 
   function getFilteredList() {
@@ -863,7 +914,187 @@
     reader.readAsText(file, 'utf-8');
   }
 
-  /* ==================== 短文連續聽力與點字即時翻譯模組 ==================== */
+  /* ==================== 短文連續聽力、短文筆記庫與點字即時翻譯模組 ==================== */
+  function renderSavedArticlesSelect() {
+    const select = document.getElementById('savedArticleSelect');
+    if (!select) return;
+    const optionsHtml = ['<option value="">-- 選擇已存短文 (' + savedArticles.length + ') --</option>'];
+    savedArticles.forEach(art => {
+      const selectedAttr = String(art.id) === String(activeSavedArticleId) ? ' selected' : '';
+      optionsHtml.push(`<option value="${escapeHtml(String(art.id))}"${selectedAttr}>${escapeHtml(art.title)}</option>`);
+    });
+    select.innerHTML = optionsHtml.join('');
+  }
+
+  function makeDefaultTitleFromText(text) {
+    const clean = text.replace(/\s+/g, ' ').trim();
+    if (!clean) return '未命名短文';
+    return clean.length > 22 ? clean.slice(0, 22) + '...' : clean;
+  }
+
+  function saveCurrentArticleToLibrary() {
+    const rawText = document.getElementById('articleTextarea').value.trim();
+    if (!rawText) {
+      alert("請先輸入或貼上英文短文再儲存！");
+      return;
+    }
+
+    const titleInputEl = document.getElementById('articleTitleInput');
+    const title = titleInputEl.value.trim() || makeDefaultTitleFromText(rawText);
+
+    const existingIndex = savedArticles.findIndex(item => String(item.id) === String(activeSavedArticleId));
+    if (existingIndex >= 0) {
+      savedArticles[existingIndex] = {
+        ...savedArticles[existingIndex],
+        title,
+        text: rawText
+      };
+      saveSavedArticlesToStorage();
+      renderSavedArticlesSelect();
+      applyArticleText(false);
+      alert(`已更新短文「${title}」！`);
+      return;
+    }
+
+    const newItem = {
+      id: Date.now(),
+      title,
+      text: rawText
+    };
+    savedArticles.unshift(newItem);
+    activeSavedArticleId = String(newItem.id);
+    saveSavedArticlesToStorage();
+    renderSavedArticlesSelect();
+    applyArticleText(false);
+    alert(`已將「${title}」存入短文庫！`);
+  }
+
+  function onSelectSavedArticle(idValue) {
+    activeSavedArticleId = idValue || '';
+    if (!idValue) return;
+
+    const found = savedArticles.find(item => String(item.id) === String(idValue));
+    if (!found) return;
+
+    stopArticleMode();
+    closeLookupCard();
+    document.getElementById('articleTitleInput').value = found.title;
+    document.getElementById('articleTextarea').value = found.text;
+    splitArticleIntoSentences(found.text);
+    saveArticlePrefs();
+    renderArticleSentences();
+  }
+
+  function deleteCurrentSavedArticle() {
+    if (!activeSavedArticleId) {
+      alert("請先從下拉選單選擇一篇已存短文。");
+      return;
+    }
+    const found = savedArticles.find(item => String(item.id) === String(activeSavedArticleId));
+    if (!found) return;
+    if (!confirm(`確定要刪除已存短文「${found.title}」嗎？`)) return;
+
+    savedArticles = savedArticles.filter(item => String(item.id) !== String(activeSavedArticleId));
+    activeSavedArticleId = '';
+    saveSavedArticlesToStorage();
+    renderSavedArticlesSelect();
+    alert(`已刪除「${found.title}」。`);
+  }
+
+  function exportArticlesJson() {
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const fileName = `articles_backup_${yyyy}-${mm}-${dd}.json`;
+
+    const payload = {
+      app: "隨身單字片語卡_短文庫",
+      version: 1,
+      exportedAt: now.toISOString(),
+      count: savedArticles.length,
+      items: savedArticles
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function triggerImportArticlesJson() {
+    const input = document.getElementById('articleJsonFileInput');
+    input.value = '';
+    input.click();
+  }
+
+  function handleImportArticlesJsonFile(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        const rawItems = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.items) ? parsed.items : null);
+        if (!rawItems) {
+          alert("短文備份檔格式不正確。");
+          return;
+        }
+
+        const cleaned = rawItems
+          .filter(item => item && typeof item.text === 'string' && item.text.trim())
+          .map((item, idx) => ({
+            id: typeof item.id === 'number' ? item.id : Date.now() + idx,
+            title: (typeof item.title === 'string' && item.title.trim()) ? item.title.trim() : makeDefaultTitleFromText(item.text),
+            text: item.text.trim()
+          }));
+
+        if (cleaned.length === 0) {
+          alert("備份檔中沒有有效的短文內容。");
+          return;
+        }
+
+        const overwrite = confirm(
+          `讀取到 ${cleaned.length} 篇短文。\n\n` +
+          `按「確定」＝ 完全覆蓋目前短文庫\n` +
+          `按「取消」＝ 與目前短文庫合併（自動略過相同內容）`
+        );
+
+        if (overwrite) {
+          savedArticles = cleaned;
+          activeSavedArticleId = cleaned[0] ? String(cleaned[0].id) : '';
+          saveSavedArticlesToStorage();
+          renderSavedArticlesSelect();
+          if (cleaned[0]) onSelectSavedArticle(activeSavedArticleId);
+          alert(`已覆蓋還原 ${cleaned.length} 篇短文！`);
+        } else {
+          const existingTexts = new Set(savedArticles.map(i => i.text.trim()));
+          let added = 0;
+          cleaned.forEach((item, idx) => {
+            const key = item.text.trim();
+            if (!existingTexts.has(key)) {
+              existingTexts.add(key);
+              savedArticles.push({ ...item, id: Date.now() + idx });
+              added++;
+            }
+          });
+          saveSavedArticlesToStorage();
+          renderSavedArticlesSelect();
+          alert(`合併完成！新增了 ${added} 篇短文（共 ${savedArticles.length} 篇）。`);
+        }
+      } catch (err) {
+        alert("無法解析短文 JSON 檔案，請確認格式是否正確。");
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+  }
+
   function initArticleModule() {
     const saved = JSON.parse(localStorage.getItem('my_article_v1') || 'null');
     const text = (saved && typeof saved.text === 'string' && saved.text.trim())
@@ -871,6 +1102,12 @@
       : defaultArticle;
 
     document.getElementById('articleTextarea').value = text;
+    const matchedPreset = savedArticles.find(a => a.text.trim() === text.trim());
+    if (matchedPreset) {
+      activeSavedArticleId = String(matchedPreset.id);
+      document.getElementById('articleTitleInput').value = matchedPreset.title;
+    }
+
     if (saved && saved.rate) {
       document.getElementById('articleRateSelect').value = saved.rate;
     }
@@ -884,6 +1121,7 @@
       document.getElementById('articleWordTapOpt').checked = saved.wordTap;
     }
 
+    renderSavedArticlesSelect();
     splitArticleIntoSentences(text);
     renderArticleSentences();
   }
@@ -938,6 +1176,9 @@
     if (!confirm("要清空目前文章嗎？")) return;
     stopArticleMode();
     closeLookupCard();
+    activeSavedArticleId = '';
+    renderSavedArticlesSelect();
+    document.getElementById('articleTitleInput').value = '';
     document.getElementById('articleTextarea').value = '';
     articleSentences = [];
     articleSentenceIdx = 0;
@@ -959,7 +1200,6 @@
   function toggleWordTapMode() {
     const enabled = document.getElementById('articleWordTapOpt').checked;
     if (enabled) {
-      // 開啟點字查義時自動解除盲聽遮罩，方便看字點擊
       document.getElementById('articleBlindOpt').checked = false;
     } else {
       closeLookupCard();
@@ -986,7 +1226,6 @@
     if (!isWordTap) {
       return escapeHtml(sentence);
     }
-    // 將英文字詞（含連字號或撇號如 carry-on, don't）拆成可點擊 token
     const parts = sentence.split(/([A-Za-z]+(?:[-'][A-Za-z]+)*)/g);
     return parts.map(part => {
       if (/^[A-Za-z]+(?:[-'][A-Za-z]+)*$/.test(part)) {
@@ -1050,7 +1289,6 @@
     document.querySelectorAll('.word-token.selected').forEach(node => node.classList.remove('selected'));
     if (el) el.classList.add('selected');
 
-    // 1. 立即唸出單字發音
     speakTextOnce(word, 0.9);
 
     const card = document.getElementById('wordLookupCard');
@@ -1065,7 +1303,6 @@
     const lower = word.toLowerCase();
     const sentenceContext = articleSentences[sentIdx] || '';
 
-    // 2. 優先比對你自己的單字庫（包含完全符合或片語包含該字）
     const exactMatch = vocabList.find(item => item.word.toLowerCase() === lower);
     if (exactMatch) {
       sourceEl.textContent = exactMatch.mastered ? '個人字庫（已熟練）' : '個人字庫（待複習）';
@@ -1079,7 +1316,6 @@
     addBtn.disabled = false;
     addBtn.textContent = '＋ 加入單字庫';
 
-    // 3. 檢查本地翻譯快取
     if (translationCache[lower]) {
       sourceEl.textContent = '即時翻譯（快取）';
       meaningEl.textContent = translationCache[lower];
@@ -1087,7 +1323,6 @@
       return;
     }
 
-    // 4. 連線呼叫免費字典翻譯 API（英翻繁中）
     sourceEl.textContent = '查詢中...';
     meaningEl.textContent = '正在取得中文翻譯...';
     currentLookupData = { word, meaning: '', exEn: sentenceContext, inVocab: false };
