@@ -29,6 +29,14 @@
   header h1 { font-size: 1.25rem; font-weight: 700; color: var(--text-main); }
   .stats-badge { font-size: 0.85rem; background: #e0e7ff; color: var(--primary-dark); padding: 4px 10px; border-radius: 20px; font-weight: 600; }
 
+  /* 主模式切換列 */
+  .mode-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #e2e8f0; padding: 4px; border-radius: 12px; }
+  .mode-tab { padding: 9px 10px; border: none; border-radius: 9px; background: transparent; color: var(--text-sub); font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: 0.15s; }
+  .mode-tab.active { background: #fff; color: var(--primary-dark); box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+
+  .mode-panel { display: none; flex-direction: column; gap: 12px; }
+  .mode-panel.active { display: flex; }
+
   /* 篩選列 */
   .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
   .filter-btn { flex: 1; padding: 8px; border: 1px solid var(--border); background: #fff; border-radius: 8px; font-size: 0.85rem; color: var(--text-sub); cursor: pointer; font-weight: 600; transition: 0.2s; }
@@ -91,6 +99,52 @@
   .btn-danger-outline { background: #fff; color: var(--danger); border: 1px solid #fecaca; font-size: 0.85rem; padding: 8px; }
   .backup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .helper-note { font-size: 0.8rem; color: var(--text-sub); line-height: 1.4; background: #f8fafc; padding: 8px; border-radius: 6px; }
+
+  /* 短文連續聽力模式樣式 */
+  .article-card { background: #fff; border: 1px solid var(--border); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.04); }
+  .article-header-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .article-title { font-size: 0.95rem; font-weight: 700; color: var(--text-main); }
+  .article-editor-toggle { background: #f1f5f9; color: var(--text-main); border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+  .article-editor { display: none; flex-direction: column; gap: 8px; }
+  .article-editor.open { display: flex; }
+  .article-textarea { min-height: 130px; font-size: 0.92rem; line-height: 1.5; }
+
+  .article-controls { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; }
+  .article-play-btn { padding: 11px 12px; border: none; border-radius: 10px; font-size: 0.92rem; font-weight: 700; cursor: pointer; background: var(--primary); color: #fff; }
+  .article-play-btn.playing { background: var(--warning); color: #fff; }
+  .article-sub-btn { padding: 11px 8px; border: 1px solid var(--border); border-radius: 10px; font-size: 0.85rem; font-weight: 700; cursor: pointer; background: #fff; color: var(--text-main); }
+
+  .article-options { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 0.82rem; color: var(--text-sub); padding-top: 2px; }
+  .article-options label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+  .article-options input[type="checkbox"] { width: auto; }
+  .article-options select { width: auto; padding: 4px 8px; font-size: 0.8rem; }
+
+  /* 點字即時翻譯結果卡片 */
+  .lookup-card { display: none; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 12px; flex-direction: column; gap: 6px; }
+  .lookup-card.open { display: flex; }
+  .lookup-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .lookup-word { font-size: 1.1rem; font-weight: 800; color: var(--primary-dark); }
+  .lookup-source { font-size: 0.72rem; padding: 2px 7px; border-radius: 999px; background: #dbeafe; color: var(--primary-dark); font-weight: 600; }
+  .lookup-meaning { font-size: 0.96rem; font-weight: 600; color: var(--text-main); line-height: 1.4; }
+  .lookup-actions { display: flex; gap: 8px; margin-top: 2px; }
+  .lookup-btn { padding: 6px 10px; border-radius: 8px; border: none; font-size: 0.8rem; font-weight: 700; cursor: pointer; }
+  .lookup-btn-speak { background: #fff; color: var(--primary); border: 1px solid #bfdbfe; }
+  .lookup-btn-add { background: var(--success); color: #fff; }
+  .lookup-btn-close { background: transparent; color: var(--text-sub); margin-left: auto; }
+
+  .sentence-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 14px; max-height: 360px; overflow-y: auto; line-height: 1.9; font-size: 1.02rem; color: var(--text-main); }
+  .sentence-item { display: inline; padding: 3px 5px; border-radius: 6px; cursor: pointer; transition: background 0.15s, color 0.15s; }
+  .sentence-item:hover { background: #e2e8f0; }
+  .sentence-item.active { background: #fef08a; color: #0f172a; font-weight: 600; }
+  .sentence-item.blind { background: #e2e8f0; color: transparent; text-shadow: 0 0 8px rgba(30,41,59,0.55); user-select: none; }
+  .sentence-item.blind.active { background: #fde68a; color: transparent; }
+  .sentence-item.blind.revealed { background: #eff6ff; color: var(--text-main); text-shadow: none; }
+
+  /* 點字模式下的單字可點擊樣式 */
+  .word-token { padding: 1px 2px; border-radius: 4px; cursor: pointer; border-bottom: 1px dashed #93c5fd; }
+  .word-token:active, .word-token.selected { background: #bfdbfe; color: #1e3a8a; font-weight: 700; }
+
+  .article-tip { font-size: 0.78rem; color: var(--text-sub); line-height: 1.4; }
 </style>
 </head>
 <body>
@@ -101,119 +155,191 @@
     <span class="stats-badge" id="statsBadge">熟練 0 / 0</span>
   </header>
 
-  <!-- 篩選列 -->
-  <div class="toolbar">
-    <button class="filter-btn active" onclick="setFilter('all', this)">全部字庫</button>
-    <button class="filter-btn" onclick="setFilter('learning', this)">待複習</button>
-    <button class="filter-btn" onclick="setFilter('mastered', this)">已熟練</button>
+  <!-- 頂部模式切換：單字卡 / 文章聽力 -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tabVocab" onclick="switchMode('vocab')">🗂️ 單字片語卡</button>
+    <button class="mode-tab" id="tabArticle" onclick="switchMode('article')">🎧 短文連續聽力</button>
   </div>
 
-  <!-- 自動循環聽力控制列（預設關閉） -->
-  <div class="loop-panel">
-    <div class="loop-top">
-      <button class="loop-btn" id="loopToggleBtn" onclick="toggleLoopMode()">🔁 開始自動循環聽力</button>
-      <span class="loop-status" id="loopStatusText">已停止</span>
+  <!-- 模式一：單字片語卡（完整保留原有功能） -->
+  <div class="mode-panel active" id="vocabModePanel">
+    <!-- 篩選列 -->
+    <div class="toolbar">
+      <button class="filter-btn active" onclick="setFilter('all', this)">全部字庫</button>
+      <button class="filter-btn" onclick="setFilter('learning', this)">待複習</button>
+      <button class="filter-btn" onclick="setFilter('mastered', this)">已熟練</button>
     </div>
-    <div class="loop-options">
-      <label><input type="checkbox" id="optSpeakZh"> 播放中文解釋</label>
-      <label><input type="checkbox" id="optAutoFlip" checked> 播例句時自動翻面</label>
-      <label>
-        停頓：
-        <select id="optPauseSec">
-          <option value="1000">1.0 秒</option>
-          <option value="1800" selected>1.8 秒</option>
-          <option value="2800">2.8 秒</option>
-        </select>
-      </label>
-    </div>
-  </div>
 
-  <!-- 單字翻轉卡 -->
-  <div class="card-scene" onclick="flipCard()">
-    <div class="card" id="flashcard">
-      <!-- 正面 -->
-      <div class="card-face card-front">
-        <div class="card-top">
-          <span class="tag" id="cardType">單字</span>
-          <span class="status-dot status-learning" id="cardStatusFront">待複習</span>
-        </div>
-        <div class="card-center">
-          <div class="word-text" id="wordFront">Loading...</div>
-          <button class="speak-btn" onclick="event.stopPropagation(); speakSingle('word')">🔊 朗讀英文</button>
-        </div>
-        <div class="hint-text">點擊卡片翻面看中文與例句</div>
+    <!-- 自動循環聽力控制列（預設關閉） -->
+    <div class="loop-panel">
+      <div class="loop-top">
+        <button class="loop-btn" id="loopToggleBtn" onclick="toggleLoopMode()">🔁 開始自動循環聽力</button>
+        <span class="loop-status" id="loopStatusText">已停止</span>
       </div>
+      <div class="loop-options">
+        <label><input type="checkbox" id="optSpeakZh"> 播放中文解釋</label>
+        <label><input type="checkbox" id="optAutoFlip" checked> 播例句時自動翻面</label>
+        <label>
+          停頓：
+          <select id="optPauseSec">
+            <option value="1000">1.0 秒</option>
+            <option value="1800" selected>1.8 秒</option>
+            <option value="2800">2.8 秒</option>
+          </select>
+        </label>
+      </div>
+    </div>
 
-      <!-- 背面 -->
-      <div class="card-face card-back">
-        <div class="card-top">
-          <span class="tag" id="wordSmallBack">Word</span>
-          <span class="status-dot status-learning" id="cardStatusBack">待複習</span>
-        </div>
-        <div class="card-center">
-          <div class="meaning-text" id="meaningBack">中文解釋</div>
-          <div class="example-box" id="exampleBox">
-            <div id="exampleEn" style="font-weight: 600; margin-bottom: 4px;">Example sentence.</div>
-            <div id="exampleZh" style="color: #64748b; font-size: 0.85rem;">例句中文翻譯</div>
+    <!-- 單字翻轉卡 -->
+    <div class="card-scene" onclick="flipCard()">
+      <div class="card" id="flashcard">
+        <!-- 正面 -->
+        <div class="card-face card-front">
+          <div class="card-top">
+            <span class="tag" id="cardType">單字</span>
+            <span class="status-dot status-learning" id="cardStatusFront">待複習</span>
           </div>
-          <button class="speak-btn" onclick="event.stopPropagation(); speakSingle('example')">🔊 朗讀例句</button>
+          <div class="card-center">
+            <div class="word-text" id="wordFront">Loading...</div>
+            <button class="speak-btn" onclick="event.stopPropagation(); speakSingle('word')">🔊 朗讀英文</button>
+          </div>
+          <div class="hint-text">點擊卡片翻面看中文與例句</div>
         </div>
-        <div class="hint-text">點擊卡片翻回正面</div>
+
+        <!-- 背面 -->
+        <div class="card-face card-back">
+          <div class="card-top">
+            <span class="tag" id="wordSmallBack">Word</span>
+            <span class="status-dot status-learning" id="cardStatusBack">待複習</span>
+          </div>
+          <div class="card-center">
+            <div class="meaning-text" id="meaningBack">中文解釋</div>
+            <div class="example-box" id="exampleBox">
+              <div id="exampleEn" style="font-weight: 600; margin-bottom: 4px;">Example sentence.</div>
+              <div id="exampleZh" style="color: #64748b; font-size: 0.85rem;">例句中文翻譯</div>
+            </div>
+            <button class="speak-btn" onclick="event.stopPropagation(); speakSingle('example')">🔊 朗讀例句</button>
+          </div>
+          <div class="hint-text">點擊卡片翻回正面</div>
+        </div>
       </div>
     </div>
+
+    <!-- 熟練度標記 -->
+    <div class="mark-controls">
+      <button class="action-btn btn-review" onclick="markStatus(false)">↺ 還不熟（待複習）</button>
+      <button class="action-btn btn-master" onclick="markStatus(true)">✓ 記住了（已熟練）</button>
+    </div>
+
+    <!-- 上一題 / 下一題 -->
+    <div class="nav-controls">
+      <button class="action-btn btn-prev" onclick="prevCard()">← 上一個</button>
+      <button class="action-btn btn-next" onclick="nextCard()">下一個 →</button>
+    </div>
+
+    <!-- 展開新增字庫面板 -->
+    <button class="manage-toggle" onclick="toggleManage()">＋ 新增單字 / 匯入與備份字庫</button>
+
+    <div class="manage-panel" id="managePanel">
+      <h3>1. 單筆新增</h3>
+      <select id="inType">
+        <option value="單字">單字 (Word)</option>
+        <option value="片語">片語 (Phrase)</option>
+      </select>
+      <input type="text" id="inWord" placeholder="英文單字或片語（例如：take into account）">
+      <input type="text" id="inMeaning" placeholder="中文意思（例如：將……納入考量）">
+      <input type="text" id="inExEn" placeholder="英文例句（選填）">
+      <input type="text" id="inExZh" placeholder="例句中文（選填）">
+      <button class="action-btn btn-primary" onclick="addSingleWord()">加入字庫</button>
+
+      <hr style="border:none; border-top:1px solid var(--border); margin:4px 0;">
+
+      <h3>2. 批量快速匯入（支援多行貼上）</h3>
+      <div class="helper-note">
+        每行一筆，用「|」分隔欄位：<br>
+        <b>英文 | 中文意思 | 英文例句 | 例句中文</b><br>
+        範例：<code>bottleneck | 瓶頸 | Testing is the main bottleneck. | 測試是主要的瓶頸。</code>
+      </div>
+      <textarea id="bulkInput" placeholder="在此貼上多行單字或片語..."></textarea>
+      <button class="action-btn btn-primary" onclick="importBulkWords()">批量匯入</button>
+
+      <hr style="border:none; border-top:1px solid var(--border); margin:4px 0;">
+
+      <h3>3. 備份與跨裝置轉移（JSON）</h3>
+      <div class="helper-note">
+        匯出後可傳到手機或另一台電腦匯入；匯入時可選擇<b>「合併」</b>或<b>「完全覆蓋」</b>。
+      </div>
+      <div class="backup-grid">
+        <button class="action-btn btn-secondary" onclick="exportBackupJson()">💾 匯出備份檔</button>
+        <button class="action-btn btn-secondary" onclick="triggerImportJson()">📂 匯入備份檔</button>
+      </div>
+      <input type="file" id="jsonFileInput" accept=".json,application/json" style="display:none;" onchange="handleImportJsonFile(event)">
+
+      <button class="action-btn btn-danger-outline" onclick="deleteCurrentWord()">🗑️ 刪除目前這張卡片</button>
+    </div>
   </div>
 
-  <!-- 熟練度標記 -->
-  <div class="mark-controls">
-    <button class="action-btn btn-review" onclick="markStatus(false)">↺ 還不熟（待複習）</button>
-    <button class="action-btn btn-master" onclick="markStatus(true)">✓ 記住了（已熟練）</button>
-  </div>
+  <!-- 模式二：短文連續聽力 -->
+  <div class="mode-panel" id="articleModePanel">
+    <div class="article-card">
+      <div class="article-header-row">
+        <span class="article-title" id="articleProgressText">第 0 / 0 句</span>
+        <button class="article-editor-toggle" onclick="toggleArticleEditor()">✏️ 貼上／編輯文章</button>
+      </div>
 
-  <!-- 上一題 / 下一題 -->
-  <div class="nav-controls">
-    <button class="action-btn btn-prev" onclick="prevCard()">← 上一個</button>
-    <button class="action-btn btn-next" onclick="nextCard()">下一個 →</button>
-  </div>
+      <!-- 文章貼上／編輯區 -->
+      <div class="article-editor" id="articleEditor">
+        <textarea class="article-textarea" id="articleTextarea" placeholder="在這裡貼上英文短文、對話或新聞段落..."></textarea>
+        <div class="backup-grid">
+          <button class="action-btn btn-primary" onclick="applyArticleText(true)">✓ 載入並切句</button>
+          <button class="action-btn btn-secondary" onclick="clearArticleText()">清空文章</button>
+        </div>
+      </div>
 
-  <!-- 展開新增字庫面板 -->
-  <button class="manage-toggle" onclick="toggleManage()">＋ 新增單字 / 匯入與備份字庫</button>
+      <!-- 播放控制 -->
+      <div class="article-controls">
+        <button class="article-play-btn" id="articlePlayBtn" onclick="toggleArticlePlay()">▶ 連續朗讀</button>
+        <button class="article-sub-btn" onclick="prevArticleSentence()">⏮ 上一句</button>
+        <button class="article-sub-btn" onclick="nextArticleSentence()">下一句 ⏭</button>
+      </div>
 
-  <div class="manage-panel" id="managePanel">
-    <h3>1. 單筆新增</h3>
-    <select id="inType">
-      <option value="單字">單字 (Word)</option>
-      <option value="片語">片語 (Phrase)</option>
-    </select>
-    <input type="text" id="inWord" placeholder="英文單字或片語（例如：take into account）">
-    <input type="text" id="inMeaning" placeholder="中文意思（例如：將……納入考量）">
-    <input type="text" id="inExEn" placeholder="英文例句（選填）">
-    <input type="text" id="inExZh" placeholder="例句中文（選填）">
-    <button class="action-btn btn-primary" onclick="addSingleWord()">加入字庫</button>
-
-    <hr style="border:none; border-top:1px solid var(--border); margin:4px 0;">
-
-    <h3>2. 批量快速匯入（支援多行貼上）</h3>
-    <div class="helper-note">
-      每行一筆，用「|」分隔欄位：<br>
-      <b>英文 | 中文意思 | 英文例句 | 例句中文</b><br>
-      範例：<code>bottleneck | 瓶頸 | Testing is the main bottleneck. | 測試是主要的瓶頸。</code>
+      <!-- 語速、循環、盲聽與點字查義設定 -->
+      <div class="article-options">
+        <label>
+          語速：
+          <select id="articleRateSelect" onchange="saveArticlePrefs()">
+            <option value="0.75">0.75x</option>
+            <option value="0.92" selected>0.92x</option>
+            <option value="1.0">1.0x</option>
+            <option value="1.15">1.15x</option>
+          </select>
+        </label>
+        <label><input type="checkbox" id="articleLoopOpt" checked onchange="saveArticlePrefs()"> 循環</label>
+        <label><input type="checkbox" id="articleBlindOpt" onchange="toggleBlindMode()"> 👁 盲聽</label>
+        <label><input type="checkbox" id="articleWordTapOpt" onchange="toggleWordTapMode()"> 🔍 點字查義</label>
+      </div>
     </div>
-    <textarea id="bulkInput" placeholder="在此貼上多行單字或片語..."></textarea>
-    <button class="action-btn btn-primary" onclick="importBulkWords()">批量匯入</button>
 
-    <hr style="border:none; border-top:1px solid var(--border); margin:4px 0;">
-
-    <h3>3. 備份與跨裝置轉移（JSON）</h3>
-    <div class="helper-note">
-      匯出後可傳到手機或另一台電腦匯入；匯入時可選擇<b>「合併」</b>或<b>「完全覆蓋」</b>。
+    <!-- 點字即時翻譯浮動卡片 -->
+    <div class="lookup-card" id="wordLookupCard">
+      <div class="lookup-top">
+        <span class="lookup-word" id="lookupWordText">word</span>
+        <span class="lookup-source" id="lookupSourceBadge">查詢中...</span>
+      </div>
+      <div class="lookup-meaning" id="lookupMeaningText">正在翻譯...</div>
+      <div class="lookup-actions">
+        <button class="lookup-btn lookup-btn-speak" onclick="speakLookupWord()">🔊 發音</button>
+        <button class="lookup-btn lookup-btn-add" id="lookupAddBtn" onclick="addLookupWordToVocab()">＋ 加入單字庫</button>
+        <button class="lookup-btn lookup-btn-close" onclick="closeLookupCard()">✕ 關閉</button>
+      </div>
     </div>
-    <div class="backup-grid">
-      <button class="action-btn btn-secondary" onclick="exportBackupJson()">💾 匯出備份檔</button>
-      <button class="action-btn btn-secondary" onclick="triggerImportJson()">📂 匯入備份檔</button>
-    </div>
-    <input type="file" id="jsonFileInput" accept=".json,application/json" style="display:none;" onchange="handleImportJsonFile(event)">
 
-    <button class="action-btn btn-danger-outline" onclick="deleteCurrentWord()">🗑️ 刪除目前這張卡片</button>
+    <!-- 逐句互動閱讀區 -->
+    <div class="sentence-box" id="articleSentenceBox"></div>
+
+    <div class="article-tip">
+      💡 預設點擊句子可直接跳轉重聽；勾選「🔍 點字查義」後，點擊任一英文單字即可發音、查詢中文，並一鍵存入你的單字庫。
+    </div>
   </div>
 </div>
 
@@ -226,16 +352,26 @@
     { id: 5, type: "單字", word: "intermittent", meaning: "間歇性的、斷斷續續的", exEn: "An intermittent failure is the hardest to debug.", exZh: "間歇性故障是最難除錯的。", mastered: false }
   ];
 
+  const defaultArticle = "After a smooth three-hour flight, we finally touched down at the airport just before noon. Since we only had carry-on bags, we cleared customs quickly and picked up a local SIM card right outside the arrival gate. To avoid the midday traffic, we decided to hop on the airport express train instead of taking a taxi. Forty minutes later, we arrived downtown and dropped off our luggage at the hotel front desk before check-in time. Feeling hungry, we wandered down a quiet side street and came across a cozy little ramen shop to grab a quick bite. By late afternoon, we noticed we were running short of cash, so we stopped by a convenience store ATM on the way back. After walking nearly fifteen thousand steps, our feet were pretty sore, so we headed back to our room and called it a day.";
+
   let vocabList = JSON.parse(localStorage.getItem('my_vocab_v1')) || defaultVocab;
   let currentFilter = 'all';
   let currentIndex = 0;
 
-  // 安全單步狀態機（無 while 迴圈，防止瀏覽器阻塞）
+  // 共用安全單步狀態機（無 while 迴圈，防止瀏覽器阻塞）
   let isLooping = false;
+  let isArticlePlaying = false;
   let loopGeneration = 0;
   let stepTimerId = null;
   let watchdogTimerId = null;
-  let activeUtterance = null; // 保留參考避免被垃圾回收中斷事件
+  let activeUtterance = null;
+
+  // 短文聽力與點字查詢狀態
+  let articleSentences = [];
+  let articleSentenceIdx = 0;
+  let revealedBlindIndices = new Set();
+  let translationCache = JSON.parse(localStorage.getItem('my_word_trans_cache_v1') || '{}');
+  let currentLookupData = null;
 
   function saveToStorage() {
     localStorage.setItem('my_vocab_v1', JSON.stringify(vocabList));
@@ -280,6 +416,30 @@
     document.getElementById('loopStatusText').textContent = '已停止';
   }
 
+  function stopArticleMode() {
+    isArticlePlaying = false;
+    resetTimersAndSpeech();
+    const btn = document.getElementById('articlePlayBtn');
+    btn.classList.remove('playing');
+    btn.textContent = '▶ 連續朗讀';
+  }
+
+  function switchMode(mode) {
+    const isVocab = mode === 'vocab';
+    document.getElementById('tabVocab').classList.toggle('active', isVocab);
+    document.getElementById('tabArticle').classList.toggle('active', !isVocab);
+    document.getElementById('vocabModePanel').classList.toggle('active', isVocab);
+    document.getElementById('articleModePanel').classList.toggle('active', !isVocab);
+
+    if (isVocab) {
+      stopArticleMode();
+      renderCard(false);
+    } else {
+      stopLoopMode();
+      renderArticleSentences();
+    }
+  }
+
   function toggleLoopMode() {
     if (isLooping) {
       stopLoopMode();
@@ -294,6 +454,7 @@
       alert("目前篩選條件下沒有可播放的卡片");
       return;
     }
+    stopArticleMode();
     isLooping = true;
     const btn = document.getElementById('loopToggleBtn');
     btn.classList.add('active');
@@ -305,9 +466,8 @@
     return parseInt(document.getElementById('optPauseSec').value, 10) || 1800;
   }
 
-  // 單步排程：播完一句才排下一句，絕不使用 while 迴圈
-  function playStepUtterance(text, lang, rate, gen, onStepDone) {
-    if (!isLooping || gen !== loopGeneration) return;
+  function playStepUtterance(text, lang, rate, gen, isStillActiveFn, onStepDone) {
+    if (!isStillActiveFn() || gen !== loopGeneration) return;
 
     if (!text) {
       onStepDone();
@@ -321,9 +481,8 @@
       window.speechSynthesis.cancel();
     } catch (e) {}
 
-    // 給瀏覽器語音引擎 80ms 緩衝釋放前一段音訊，避免 Windows Edge/Chrome 語音佇列卡住
     stepTimerId = setTimeout(() => {
-      if (!isLooping || gen !== loopGeneration) return;
+      if (!isStillActiveFn() || gen !== loopGeneration) return;
 
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = lang;
@@ -339,7 +498,7 @@
           watchdogTimerId = null;
         }
         activeUtterance = null;
-        if (isLooping && gen === loopGeneration) {
+        if (isStillActiveFn() && gen === loopGeneration) {
           onStepDone();
         }
       };
@@ -347,8 +506,7 @@
       utterance.onend = finishOnce;
       utterance.onerror = finishOnce;
 
-      // 看門狗超時保護：避免部分系統語音未回傳 onend 導致停擺
-      const maxWait = Math.min(12000, Math.max(2800, text.length * 160));
+      const maxWait = Math.min(15000, Math.max(3000, text.length * 150));
       watchdogTimerId = setTimeout(finishOnce, maxWait);
 
       try {
@@ -378,20 +536,18 @@
     const speakZh = document.getElementById('optSpeakZh').checked;
     const autoFlip = document.getElementById('optAutoFlip').checked;
     const pauseMs = getPauseMs();
+    const activeFn = () => isLooping;
 
     document.getElementById('flashcard').classList.remove('is-flipped');
 
-    // 步驟 1：朗讀英文單字/片語
     statusEl.textContent = `朗讀英文 (${currentIndex + 1}/${list.length})`;
-    playStepUtterance(item.word, 'en-US', 0.92, gen, () => {
+    playStepUtterance(item.word, 'en-US', 0.92, gen, activeFn, () => {
       stepTimerId = setTimeout(() => {
         if (!isLooping || gen !== loopGeneration) return;
 
-        // 步驟 2：朗讀英文例句（若有）
         const afterExample = () => {
           if (!isLooping || gen !== loopGeneration) return;
 
-          // 步驟 3：朗讀中文解釋（若有勾選）
           const afterMeaning = () => {
             if (!isLooping || gen !== loopGeneration) return;
             statusEl.textContent = `準備下一張...`;
@@ -406,7 +562,7 @@
           if (speakZh && item.meaning) {
             document.getElementById('flashcard').classList.add('is-flipped');
             statusEl.textContent = `中文解釋 (${currentIndex + 1}/${list.length})`;
-            playStepUtterance(item.meaning, 'zh-TW', 1.0, gen, afterMeaning);
+            playStepUtterance(item.meaning, 'zh-TW', 1.0, gen, activeFn, afterMeaning);
           } else {
             afterMeaning();
           }
@@ -417,7 +573,7 @@
             document.getElementById('flashcard').classList.add('is-flipped');
           }
           statusEl.textContent = `朗讀例句 (${currentIndex + 1}/${list.length})`;
-          playStepUtterance(item.exEn, 'en-US', 0.92, gen, () => {
+          playStepUtterance(item.exEn, 'en-US', 0.92, gen, activeFn, () => {
             stepTimerId = setTimeout(afterExample, Math.min(pauseMs, 1000));
           });
         } else {
@@ -511,6 +667,17 @@
     }
   }
 
+  function speakTextOnce(text, rate = 0.92) {
+    if (!text || !('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.rate = rate;
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {}
+  }
+
   function speakSingle(mode) {
     if (isLooping) {
       stopLoopMode();
@@ -519,18 +686,7 @@
     if (list.length === 0) return;
     const item = list[currentIndex];
     const textToSpeak = (mode === 'example' && item.exEn) ? item.exEn : item.word;
-
-    if ('speechSynthesis' in window) {
-      try {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(textToSpeak);
-        utterance.lang = 'en-US';
-        utterance.rate = 0.92;
-        window.speechSynthesis.speak(utterance);
-      } catch (e) {}
-    } else {
-      alert("您的瀏覽器不支援語音朗讀功能");
-    }
+    speakTextOnce(textToSpeak, 0.92);
   }
 
   function toggleManage() {
@@ -707,6 +863,374 @@
     reader.readAsText(file, 'utf-8');
   }
 
+  /* ==================== 短文連續聽力與點字即時翻譯模組 ==================== */
+  function initArticleModule() {
+    const saved = JSON.parse(localStorage.getItem('my_article_v1') || 'null');
+    const text = (saved && typeof saved.text === 'string' && saved.text.trim())
+      ? saved.text
+      : defaultArticle;
+
+    document.getElementById('articleTextarea').value = text;
+    if (saved && saved.rate) {
+      document.getElementById('articleRateSelect').value = saved.rate;
+    }
+    if (saved && typeof saved.loop === 'boolean') {
+      document.getElementById('articleLoopOpt').checked = saved.loop;
+    }
+    if (saved && typeof saved.blind === 'boolean') {
+      document.getElementById('articleBlindOpt').checked = saved.blind;
+    }
+    if (saved && typeof saved.wordTap === 'boolean') {
+      document.getElementById('articleWordTapOpt').checked = saved.wordTap;
+    }
+
+    splitArticleIntoSentences(text);
+    renderArticleSentences();
+  }
+
+  function saveArticlePrefs() {
+    const payload = {
+      text: document.getElementById('articleTextarea').value,
+      rate: document.getElementById('articleRateSelect').value,
+      loop: document.getElementById('articleLoopOpt').checked,
+      blind: document.getElementById('articleBlindOpt').checked,
+      wordTap: document.getElementById('articleWordTapOpt').checked
+    };
+    localStorage.setItem('my_article_v1', JSON.stringify(payload));
+  }
+
+  function splitArticleIntoSentences(rawText) {
+    const normalized = rawText.replace(/\r\n/g, '\n').trim();
+    if (!normalized) {
+      articleSentences = [];
+      articleSentenceIdx = 0;
+      return;
+    }
+    const matches = normalized.match(/[^.!?\n]+(?:[.!?]+|(?=\n|$))/g);
+    articleSentences = (matches || [normalized])
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+    articleSentenceIdx = 0;
+    revealedBlindIndices.clear();
+  }
+
+  function toggleArticleEditor() {
+    document.getElementById('articleEditor').classList.toggle('open');
+  }
+
+  function applyArticleText(closeEditor = false) {
+    const raw = document.getElementById('articleTextarea').value.trim();
+    if (!raw) {
+      alert("請先貼上或輸入英文短文！");
+      return;
+    }
+    stopArticleMode();
+    closeLookupCard();
+    splitArticleIntoSentences(raw);
+    saveArticlePrefs();
+    renderArticleSentences();
+    if (closeEditor) {
+      document.getElementById('articleEditor').classList.remove('open');
+    }
+  }
+
+  function clearArticleText() {
+    if (!confirm("要清空目前文章嗎？")) return;
+    stopArticleMode();
+    closeLookupCard();
+    document.getElementById('articleTextarea').value = '';
+    articleSentences = [];
+    articleSentenceIdx = 0;
+    revealedBlindIndices.clear();
+    saveArticlePrefs();
+    renderArticleSentences();
+  }
+
+  function toggleBlindMode() {
+    revealedBlindIndices.clear();
+    if (document.getElementById('articleBlindOpt').checked) {
+      document.getElementById('articleWordTapOpt').checked = false;
+      closeLookupCard();
+    }
+    saveArticlePrefs();
+    renderArticleSentences();
+  }
+
+  function toggleWordTapMode() {
+    const enabled = document.getElementById('articleWordTapOpt').checked;
+    if (enabled) {
+      // 開啟點字查義時自動解除盲聽遮罩，方便看字點擊
+      document.getElementById('articleBlindOpt').checked = false;
+    } else {
+      closeLookupCard();
+    }
+    saveArticlePrefs();
+    renderArticleSentences();
+  }
+
+  function updateArticleProgressLabel() {
+    const total = articleSentences.length;
+    const current = total === 0 ? 0 : Math.min(articleSentenceIdx + 1, total);
+    document.getElementById('articleProgressText').textContent = `第 ${current} / ${total} 句`;
+  }
+
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function formatSentenceContent(sentence, sentIdx, isWordTap) {
+    if (!isWordTap) {
+      return escapeHtml(sentence);
+    }
+    // 將英文字詞（含連字號或撇號如 carry-on, don't）拆成可點擊 token
+    const parts = sentence.split(/([A-Za-z]+(?:[-'][A-Za-z]+)*)/g);
+    return parts.map(part => {
+      if (/^[A-Za-z]+(?:[-'][A-Za-z]+)*$/.test(part)) {
+        const cleanWord = part.replace(/'/g, "\\'");
+        return `<span class="word-token" onclick="event.stopPropagation(); lookupSingleWord('${cleanWord}', ${sentIdx}, this)">${escapeHtml(part)}</span>`;
+      }
+      return escapeHtml(part);
+    }).join('');
+  }
+
+  function renderArticleSentences() {
+    const box = document.getElementById('articleSentenceBox');
+    updateArticleProgressLabel();
+
+    if (articleSentences.length === 0) {
+      box.innerHTML = '<span style="color:#64748b;">尚無文章內容，請點選右上角「貼上／編輯文章」輸入英文短文。</span>';
+      return;
+    }
+
+    const isBlind = document.getElementById('articleBlindOpt').checked;
+    const isWordTap = document.getElementById('articleWordTapOpt').checked;
+
+    box.innerHTML = articleSentences.map((sentence, idx) => {
+      const classes = ['sentence-item'];
+      if (idx === articleSentenceIdx) classes.push('active');
+      if (isBlind) {
+        classes.push('blind');
+        if (revealedBlindIndices.has(idx)) classes.push('revealed');
+      }
+      const contentHtml = formatSentenceContent(sentence, idx, isWordTap);
+      return `<span class="${classes.join(' ')}" id="art-sent-${idx}" onclick="onSentenceClick(${idx})">${contentHtml}</span> `;
+    }).join('');
+
+    const activeEl = document.getElementById(`art-sent-${articleSentenceIdx}`);
+    if (activeEl) {
+      activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  function onSentenceClick(idx) {
+    const isBlind = document.getElementById('articleBlindOpt').checked;
+    if (isBlind && idx === articleSentenceIdx && !revealedBlindIndices.has(idx)) {
+      revealedBlindIndices.add(idx);
+      renderArticleSentences();
+      return;
+    }
+    articleSentenceIdx = idx;
+    if (isBlind) {
+      revealedBlindIndices.add(idx);
+    }
+    renderArticleSentences();
+    playArticleFromCurrent();
+  }
+
+  /* 點字即時查詢邏輯 */
+  async function lookupSingleWord(word, sentIdx, el) {
+    if (isArticlePlaying) {
+      stopArticleMode();
+    }
+
+    document.querySelectorAll('.word-token.selected').forEach(node => node.classList.remove('selected'));
+    if (el) el.classList.add('selected');
+
+    // 1. 立即唸出單字發音
+    speakTextOnce(word, 0.9);
+
+    const card = document.getElementById('wordLookupCard');
+    const wordEl = document.getElementById('lookupWordText');
+    const sourceEl = document.getElementById('lookupSourceBadge');
+    const meaningEl = document.getElementById('lookupMeaningText');
+    const addBtn = document.getElementById('lookupAddBtn');
+
+    card.classList.add('open');
+    wordEl.textContent = word;
+
+    const lower = word.toLowerCase();
+    const sentenceContext = articleSentences[sentIdx] || '';
+
+    // 2. 優先比對你自己的單字庫（包含完全符合或片語包含該字）
+    const exactMatch = vocabList.find(item => item.word.toLowerCase() === lower);
+    if (exactMatch) {
+      sourceEl.textContent = exactMatch.mastered ? '個人字庫（已熟練）' : '個人字庫（待複習）';
+      meaningEl.textContent = exactMatch.meaning;
+      addBtn.style.display = 'none';
+      currentLookupData = { word, meaning: exactMatch.meaning, exEn: sentenceContext, inVocab: true };
+      return;
+    }
+
+    addBtn.style.display = 'inline-block';
+    addBtn.disabled = false;
+    addBtn.textContent = '＋ 加入單字庫';
+
+    // 3. 檢查本地翻譯快取
+    if (translationCache[lower]) {
+      sourceEl.textContent = '即時翻譯（快取）';
+      meaningEl.textContent = translationCache[lower];
+      currentLookupData = { word, meaning: translationCache[lower], exEn: sentenceContext, inVocab: false };
+      return;
+    }
+
+    // 4. 連線呼叫免費字典翻譯 API（英翻繁中）
+    sourceEl.textContent = '查詢中...';
+    meaningEl.textContent = '正在取得中文翻譯...';
+    currentLookupData = { word, meaning: '', exEn: sentenceContext, inVocab: false };
+
+    try {
+      const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=en|zh-TW`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const translated = data && data.responseData && data.responseData.translatedText
+        ? data.responseData.translatedText.trim()
+        : '';
+
+      if (translated) {
+        translationCache[lower] = translated;
+        localStorage.setItem('my_word_trans_cache_v1', JSON.stringify(translationCache));
+        sourceEl.textContent = '即時翻譯';
+        meaningEl.textContent = translated;
+        currentLookupData.meaning = translated;
+      } else {
+        sourceEl.textContent = '無結果';
+        meaningEl.textContent = '暫時查無翻譯，請檢查網路連線。';
+      }
+    } catch (err) {
+      sourceEl.textContent = '離線狀態';
+      meaningEl.textContent = '目前無網路連線，僅能查詢已收錄於個人字庫的單字。';
+    }
+  }
+
+  function speakLookupWord() {
+    if (currentLookupData && currentLookupData.word) {
+      speakTextOnce(currentLookupData.word, 0.9);
+    }
+  }
+
+  function addLookupWordToVocab() {
+    if (!currentLookupData || !currentLookupData.word) return;
+    let meaning = currentLookupData.meaning;
+    if (!meaning || meaning.startsWith('正在') || meaning.startsWith('暫時') || meaning.startsWith('目前')) {
+      meaning = prompt(`請輸入「${currentLookupData.word}」的中文意思：`, '');
+      if (!meaning || !meaning.trim()) return;
+      meaning = meaning.trim();
+    }
+
+    const exists = vocabList.some(i => i.word.toLowerCase() === currentLookupData.word.toLowerCase());
+    if (exists) {
+      alert('這個單字已經在你的單字庫裡囉！');
+      return;
+    }
+
+    vocabList.unshift({
+      id: Date.now(),
+      type: currentLookupData.word.includes(' ') ? '片語' : '單字',
+      word: currentLookupData.word,
+      meaning: meaning,
+      exEn: currentLookupData.exEn || '',
+      exZh: '',
+      mastered: false
+    });
+    saveToStorage();
+
+    const addBtn = document.getElementById('lookupAddBtn');
+    addBtn.textContent = '✓ 已收錄';
+    addBtn.disabled = true;
+    document.getElementById('lookupSourceBadge').textContent = '已加入個人字庫';
+  }
+
+  function closeLookupCard() {
+    document.getElementById('wordLookupCard').classList.remove('open');
+    document.querySelectorAll('.word-token.selected').forEach(node => node.classList.remove('selected'));
+  }
+
+  function toggleArticlePlay() {
+    if (isArticlePlaying) {
+      stopArticleMode();
+      return;
+    }
+    if (!('speechSynthesis' in window)) {
+      alert("您的瀏覽器不支援語音朗讀功能");
+      return;
+    }
+    if (articleSentences.length === 0) {
+      applyArticleText(false);
+      if (articleSentences.length === 0) return;
+    }
+    stopLoopMode();
+    playArticleFromCurrent();
+  }
+
+  function playArticleFromCurrent() {
+    if (articleSentences.length === 0) return;
+    isArticlePlaying = true;
+    const btn = document.getElementById('articlePlayBtn');
+    btn.classList.add('playing');
+    btn.textContent = '⏹ 停止朗讀';
+    runArticleSentenceStep();
+  }
+
+  function runArticleSentenceStep() {
+    resetTimersAndSpeech();
+    if (!isArticlePlaying) return;
+
+    if (articleSentenceIdx >= articleSentences.length) {
+      const shouldLoop = document.getElementById('articleLoopOpt').checked;
+      if (shouldLoop) {
+        articleSentenceIdx = 0;
+        revealedBlindIndices.clear();
+      } else {
+        stopArticleMode();
+        return;
+      }
+    }
+
+    renderArticleSentences();
+
+    const gen = loopGeneration;
+    const rate = parseFloat(document.getElementById('articleRateSelect').value) || 0.92;
+    const sentenceText = articleSentences[articleSentenceIdx];
+    const activeFn = () => isArticlePlaying;
+
+    playStepUtterance(sentenceText, 'en-US', rate, gen, activeFn, () => {
+      if (!isArticlePlaying || gen !== loopGeneration) return;
+      stepTimerId = setTimeout(() => {
+        if (!isArticlePlaying || gen !== loopGeneration) return;
+        articleSentenceIdx++;
+        runArticleSentenceStep();
+      }, 350);
+    });
+  }
+
+  function prevArticleSentence() {
+    if (articleSentences.length === 0) return;
+    articleSentenceIdx = (articleSentenceIdx - 1 + articleSentences.length) % articleSentences.length;
+    renderArticleSentences();
+    if (isArticlePlaying) playArticleFromCurrent();
+  }
+
+  function nextArticleSentence() {
+    if (articleSentences.length === 0) return;
+    articleSentenceIdx = (articleSentenceIdx + 1) % articleSentences.length;
+    renderArticleSentences();
+    if (isArticlePlaying) playArticleFromCurrent();
+  }
+
   // 離開分頁時自動停止語音
   window.addEventListener('beforeunload', () => {
     resetTimersAndSpeech();
@@ -714,6 +1238,7 @@
 
   updateStats();
   renderCard(true);
+  initArticleModule();
 </script>
 </body>
 </html>
