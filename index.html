@@ -114,7 +114,8 @@
 
   .article-editor { display: none; flex-direction: column; gap: 8px; padding-top: 4px; border-top: 1px dashed var(--border); }
   .article-editor.open { display: flex; }
-  .article-textarea { min-height: 130px; font-size: 0.92rem; line-height: 1.5; }
+  .article-textarea { min-height: 120px; font-size: 0.92rem; line-height: 1.5; }
+  .article-zh-textarea { min-height: 95px; font-size: 0.88rem; line-height: 1.5; }
   .article-backup-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
   .article-controls { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px; }
@@ -140,13 +141,22 @@
   .lookup-btn-add { background: var(--success); color: #fff; }
   .lookup-btn-close { background: transparent; color: var(--text-sub); margin-left: auto; }
 
-  .sentence-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 14px; max-height: 360px; overflow-y: auto; line-height: 1.9; font-size: 1.02rem; color: var(--text-main); }
-  .sentence-item { display: inline; padding: 3px 5px; border-radius: 6px; cursor: pointer; transition: background 0.15s, color 0.15s; }
-  .sentence-item:hover { background: #e2e8f0; }
-  .sentence-item.active { background: #fef08a; color: #0f172a; font-weight: 600; }
-  .sentence-item.blind { background: #e2e8f0; color: transparent; text-shadow: 0 0 8px rgba(30,41,59,0.55); user-select: none; }
-  .sentence-item.blind.active { background: #fde68a; color: transparent; }
-  .sentence-item.blind.revealed { background: #eff6ff; color: var(--text-main); text-shadow: none; }
+  .sentence-box { background: #f8fafc; border: 1px solid var(--border); border-radius: 12px; padding: 14px; max-height: 380px; overflow-y: auto; line-height: 1.75; font-size: 1.02rem; color: var(--text-main); display: flex; flex-direction: column; gap: 10px; }
+  .sentence-block { padding: 6px 8px; border-radius: 8px; cursor: pointer; transition: background 0.15s, color 0.15s; border-bottom: 1px dashed #e2e8f0; }
+  .sentence-block:last-child { border-bottom: none; }
+  .sentence-block:hover { background: #eef2f6; }
+  .sentence-block.active { background: #fef9c3; }
+  .sentence-en { display: block; font-size: 1.02rem; line-height: 1.65; color: var(--text-main); }
+  .sentence-block.active .sentence-en { color: #0f172a; font-weight: 600; }
+  .sentence-zh { display: none; font-size: 0.88rem; line-height: 1.5; color: #475569; margin-top: 3px; padding-left: 2px; }
+  .sentence-box.show-zh .sentence-zh { display: block; }
+
+  .sentence-block.blind .sentence-en,
+  .sentence-block.blind .sentence-zh { background: #e2e8f0; color: transparent; text-shadow: 0 0 8px rgba(30,41,59,0.55); user-select: none; border-radius: 4px; padding: 1px 4px; }
+  .sentence-block.blind.active .sentence-en,
+  .sentence-block.blind.active .sentence-zh { background: #fde68a; color: transparent; }
+  .sentence-block.blind.revealed .sentence-en { background: #eff6ff; color: var(--text-main); text-shadow: none; }
+  .sentence-block.blind.revealed .sentence-zh { background: transparent; color: #475569; text-shadow: none; }
 
   /* 點字模式下的單字可點擊樣式 */
   .word-token { padding: 1px 2px; border-radius: 4px; cursor: pointer; border-bottom: 1px dashed #93c5fd; }
@@ -307,6 +317,7 @@
       <div class="article-editor" id="articleEditor">
         <input type="text" id="articleTitleInput" placeholder="短文標題（選填，例如：機場入境與搭車）">
         <textarea class="article-textarea" id="articleTextarea" placeholder="在這裡貼上英文短文、對話或新聞段落..."></textarea>
+        <textarea class="article-zh-textarea" id="articleZhTextarea" placeholder="逐句中文翻譯（選填：每行一句或用 | 分隔，會依英文句子順序自動對齊）"></textarea>
         <div class="backup-grid">
           <button class="action-btn btn-primary" onclick="applyArticleText(false)">✓ 載入並切句</button>
           <button class="action-btn btn-success-soft" onclick="saveCurrentArticleToLibrary()">💾 儲存到短文庫</button>
@@ -326,7 +337,7 @@
         <button class="article-sub-btn" onclick="nextArticleSentence()">下一句 ⏭</button>
       </div>
 
-      <!-- 語速、循環、盲聽與點字查義設定 -->
+      <!-- 語速、循環、中文、盲聽與點字查義設定 -->
       <div class="article-options">
         <label>
           語速：
@@ -338,6 +349,7 @@
           </select>
         </label>
         <label><input type="checkbox" id="articleLoopOpt" checked onchange="saveArticlePrefs()"> 循環</label>
+        <label><input type="checkbox" id="articleShowZhOpt" checked onchange="toggleShowZhMode()"> 🌐 顯示中文</label>
         <label><input type="checkbox" id="articleBlindOpt" onchange="toggleBlindMode()"> 👁 盲聽</label>
         <label><input type="checkbox" id="articleWordTapOpt" onchange="toggleWordTapMode()"> 🔍 點字查義</label>
       </div>
@@ -358,7 +370,7 @@
     </div>
 
     <!-- 逐句互動閱讀區 -->
-    <div class="sentence-box" id="articleSentenceBox"></div>
+    <div class="sentence-box show-zh" id="articleSentenceBox"></div>
 
     <div class="article-tip">
       💡 預設點擊句子可直接跳轉重聽；勾選「🔍 點字查義」後，點擊任一英文單字即可發音、查詢中文，並一鍵存入你的單字庫。
@@ -377,21 +389,61 @@
 
   const defaultArticle = "After a smooth three-hour flight, we finally touched down at the airport just before noon. Since we only had carry-on bags, we cleared customs quickly and picked up a local SIM card right outside the arrival gate. To avoid the midday traffic, we decided to hop on the airport express train instead of taking a taxi. Forty minutes later, we arrived downtown and dropped off our luggage at the hotel front desk before check-in time. Feeling hungry, we wandered down a quiet side street and came across a cozy little ramen shop to grab a quick bite. By late afternoon, we noticed we were running short of cash, so we stopped by a convenience store ATM on the way back. After walking nearly fifteen thousand steps, our feet were pretty sore, so we headed back to our room and called it a day.";
 
+  const defaultArticleZh = [
+    "經過三小時平穩的飛行後，我們終於在中午以前降落機場。",
+    "因為我們只有隨身行李，很快就通關並在抵達大門外買了當地 SIM 卡。",
+    "為了避開中午的車潮，我們決定搭機場快線而不是搭計程車。",
+    "四十分鐘後我們抵達市區，在入住時間前先到飯店櫃檯寄放行李。",
+    "覺得肚子餓，我們走進安靜的小巷，無意中發現一家溫馨的小拉麵店快速吃點東西。",
+    "到了傍晚，我們發現現金快不夠了，便在回程路上順道去便利商店提款機領錢。",
+    "走了將近一萬五千步之後，我們的腳相當痠痛，於是回房間結束一天的行程。"
+  ].join("\n");
+
   const defaultSavedArticles = [
     {
       id: 1001,
       title: "機場入境與搭車進市區",
-      text: defaultArticle
+      text: defaultArticle,
+      zhText: defaultArticleZh
     },
     {
       id: 1002,
       title: "咖啡廳早晨行程討論",
-      text: "Good morning! Did you sleep well, or are you still dealing with a bit of jet lag? Honestly, I woke up around five, so I already unpacked and looked over our itinerary for today. Nice! Let's grab some coffee first before we head out to the harbor market. Sounds like a plan. By the way, do you know if this café takes credit cards, or should we pay in cash? Let me check the sign at the counter. Oh, it says cash only, so good thing I stopped by the ATM earlier. In that case, I'll order two iced lattes and a couple of croissants, and you can pay me back later. Thanks! Let's sit by the window for twenty minutes, take in the morning view, and then hop on the express bus."
+      text: "Good morning! Did you sleep well, or are you still dealing with a bit of jet lag? Honestly, I woke up around five, so I already unpacked and looked over our itinerary for today. Nice! Let's grab some coffee first before we head out to the harbor market. Sounds like a plan. By the way, do you know if this café takes credit cards, or should we pay in cash? Let me check the sign at the counter. Oh, it says cash only, so good thing I stopped by the ATM earlier. In that case, I'll order two iced lattes and a couple of croissants, and you can pay me back later. Thanks! Let's sit by the window for twenty minutes, take in the morning view, and then hop on the express bus.",
+      zhText: [
+        "早安！",
+        "你睡得好嗎，還是還在調時差？",
+        "老實說我五點就醒了，所以已經整理好行李並看過今天的行程表。",
+        "太好了！",
+        "我們出發去港口市集前先買杯咖啡吧。",
+        "聽起來不錯。",
+        "順便問一下，你知道這家咖啡廳收信用卡嗎，還是要付現？",
+        "我看一下櫃檯牌子。",
+        "喔，上面寫只收現金，幸好我剛剛有去提款機領錢。",
+        "那我來點兩杯冰拿鐵和幾個可頌，你晚點再還我錢就好。",
+        "謝啦！",
+        "我們坐窗邊二十分鐘欣賞一下晨景，然後就搭特快公車出發。"
+      ].join("\n")
     },
     {
       id: 1003,
       title: "飯店入住與行李寄放",
-      text: "Welcome to the Harbor View Inn! How can I help you today? Hi there. We have a reservation under Charles for three nights, though we might be a bit early for check-in. Let me pull up your booking right away. Your room is still being cleaned by housekeeping, so it will be ready at three. No problem at all. Could we leave our suitcases at the front desk in the meantime? By all means! I'll tag your bags now and store them safely in our luggage room. Also, could you recommend a good local noodle shop within walking distance? Sure! Just cut across the plaza outside, turn left at the crosswalk, and look for a wooden sign on your right."
+      text: "Welcome to the Harbor View Inn! How can I help you today? Hi there. We have a reservation under Charles for three nights, though we might be a bit early for check-in. Let me pull up your booking right away. Your room is still being cleaned by housekeeping, so it will be ready at three. No problem at all. Could we leave our suitcases at the front desk in the meantime? By all means! I'll tag your bags now and store them safely in our luggage room. Also, could you recommend a good local noodle shop within walking distance? Sure! Just cut across the plaza outside, turn left at the crosswalk, and look for a wooden sign on your right.",
+      zhText: [
+        "歡迎來到海景旅宿！",
+        "今天有什麼我可以幫您的嗎？",
+        "你好。",
+        "我們有以 Charles 名字預訂三晚的房間，不過我們現在來辦理入住可能有點早。",
+        "我馬上幫您查詢預訂紀錄。",
+        "您的房間客房人員還在清潔中，三點就會準備好。",
+        "完全沒問題。",
+        "這段期間我們可以把行李箱寄放在櫃檯嗎？",
+        "當然可以！",
+        "我現在就幫你們的行李掛上吊牌，妥善存放在行李房裡。",
+        "另外，你可以推薦一家步行就能到的當地好吃麵店嗎？",
+        "當然！",
+        "只要穿過外面的廣場、在斑馬線左轉，留意右手邊一塊木頭招牌就是了。"
+      ].join("\n")
     }
   ];
 
@@ -409,6 +461,7 @@
 
   // 短文聽力、短文筆記庫與點字查詢狀態
   let articleSentences = [];
+  let articleSentenceZhList = [];
   let articleSentenceIdx = 0;
   let revealedBlindIndices = new Set();
   let translationCache = JSON.parse(localStorage.getItem('my_word_trans_cache_v1') || '{}');
@@ -914,7 +967,7 @@
     reader.readAsText(file, 'utf-8');
   }
 
-  /* ==================== 短文連續聽力、短文筆記庫與點字即時翻譯模組 ==================== */
+  /* ==================== 短文連續聽力、短文筆記庫、中英對照與點字即時翻譯模組 ==================== */
   function renderSavedArticlesSelect() {
     const select = document.getElementById('savedArticleSelect');
     if (!select) return;
@@ -940,14 +993,17 @@
     }
 
     const titleInputEl = document.getElementById('articleTitleInput');
+    const zhTextareaEl = document.getElementById('articleZhTextarea');
     const title = titleInputEl.value.trim() || makeDefaultTitleFromText(rawText);
+    const zhText = zhTextareaEl.value.trim();
 
     const existingIndex = savedArticles.findIndex(item => String(item.id) === String(activeSavedArticleId));
     if (existingIndex >= 0) {
       savedArticles[existingIndex] = {
         ...savedArticles[existingIndex],
         title,
-        text: rawText
+        text: rawText,
+        zhText
       };
       saveSavedArticlesToStorage();
       renderSavedArticlesSelect();
@@ -959,7 +1015,8 @@
     const newItem = {
       id: Date.now(),
       title,
-      text: rawText
+      text: rawText,
+      zhText
     };
     savedArticles.unshift(newItem);
     activeSavedArticleId = String(newItem.id);
@@ -980,7 +1037,8 @@
     closeLookupCard();
     document.getElementById('articleTitleInput').value = found.title;
     document.getElementById('articleTextarea').value = found.text;
-    splitArticleIntoSentences(found.text);
+    document.getElementById('articleZhTextarea').value = found.zhText || '';
+    splitArticleIntoSentences(found.text, found.zhText || '');
     saveArticlePrefs();
     renderArticleSentences();
   }
@@ -1010,7 +1068,7 @@
 
     const payload = {
       app: "隨身單字片語卡_短文庫",
-      version: 1,
+      version: 2,
       exportedAt: now.toISOString(),
       count: savedArticles.length,
       items: savedArticles
@@ -1052,7 +1110,8 @@
           .map((item, idx) => ({
             id: typeof item.id === 'number' ? item.id : Date.now() + idx,
             title: (typeof item.title === 'string' && item.title.trim()) ? item.title.trim() : makeDefaultTitleFromText(item.text),
-            text: item.text.trim()
+            text: item.text.trim(),
+            zhText: typeof item.zhText === 'string' ? item.zhText.trim() : ''
           }));
 
         if (cleaned.length === 0) {
@@ -1100,12 +1159,20 @@
     const text = (saved && typeof saved.text === 'string' && saved.text.trim())
       ? saved.text
       : defaultArticle;
+    const zhText = (saved && typeof saved.zhText === 'string')
+      ? saved.zhText
+      : (text.trim() === defaultArticle.trim() ? defaultArticleZh : '');
 
     document.getElementById('articleTextarea').value = text;
+    document.getElementById('articleZhTextarea').value = zhText;
+
     const matchedPreset = savedArticles.find(a => a.text.trim() === text.trim());
     if (matchedPreset) {
       activeSavedArticleId = String(matchedPreset.id);
       document.getElementById('articleTitleInput').value = matchedPreset.title;
+      if (!zhText && matchedPreset.zhText) {
+        document.getElementById('articleZhTextarea').value = matchedPreset.zhText;
+      }
     }
 
     if (saved && saved.rate) {
@@ -1114,6 +1181,9 @@
     if (saved && typeof saved.loop === 'boolean') {
       document.getElementById('articleLoopOpt').checked = saved.loop;
     }
+    if (saved && typeof saved.showZh === 'boolean') {
+      document.getElementById('articleShowZhOpt').checked = saved.showZh;
+    }
     if (saved && typeof saved.blind === 'boolean') {
       document.getElementById('articleBlindOpt').checked = saved.blind;
     }
@@ -1121,26 +1191,57 @@
       document.getElementById('articleWordTapOpt').checked = saved.wordTap;
     }
 
+    syncShowZhClass();
     renderSavedArticlesSelect();
-    splitArticleIntoSentences(text);
+    splitArticleIntoSentences(text, document.getElementById('articleZhTextarea').value);
     renderArticleSentences();
   }
 
   function saveArticlePrefs() {
     const payload = {
       text: document.getElementById('articleTextarea').value,
+      zhText: document.getElementById('articleZhTextarea').value,
       rate: document.getElementById('articleRateSelect').value,
       loop: document.getElementById('articleLoopOpt').checked,
+      showZh: document.getElementById('articleShowZhOpt').checked,
       blind: document.getElementById('articleBlindOpt').checked,
       wordTap: document.getElementById('articleWordTapOpt').checked
     };
     localStorage.setItem('my_article_v1', JSON.stringify(payload));
   }
 
-  function splitArticleIntoSentences(rawText) {
+  function syncShowZhClass() {
+    const box = document.getElementById('articleSentenceBox');
+    const showZh = document.getElementById('articleShowZhOpt').checked;
+    box.classList.toggle('show-zh', showZh);
+  }
+
+  function toggleShowZhMode() {
+    syncShowZhClass();
+    saveArticlePrefs();
+  }
+
+  function parseZhSegments(rawZh, expectedCount) {
+    const clean = (rawZh || '').replace(/\r\n/g, '\n').trim();
+    if (!clean || expectedCount <= 0) return [];
+    let parts = clean.includes('\n')
+      ? clean.split('\n').map(s => s.trim()).filter(Boolean)
+      : clean.split('|').map(s => s.trim()).filter(Boolean);
+
+    if (parts.length === 1 && expectedCount > 1 && /[。！？!?]/.test(parts[0])) {
+      const sentMatches = parts[0].match(/[^。！？!?]+(?:[。！？!?]+|$)/g);
+      if (sentMatches && sentMatches.length > 1) {
+        parts = sentMatches.map(s => s.trim()).filter(Boolean);
+      }
+    }
+    return parts;
+  }
+
+  function splitArticleIntoSentences(rawText, rawZhText = '') {
     const normalized = rawText.replace(/\r\n/g, '\n').trim();
     if (!normalized) {
       articleSentences = [];
+      articleSentenceZhList = [];
       articleSentenceIdx = 0;
       return;
     }
@@ -1148,6 +1249,10 @@
     articleSentences = (matches || [normalized])
       .map(s => s.trim())
       .filter(s => s.length > 0);
+
+    const zhParts = parseZhSegments(rawZhText, articleSentences.length);
+    articleSentenceZhList = articleSentences.map((_, idx) => zhParts[idx] || '');
+
     articleSentenceIdx = 0;
     revealedBlindIndices.clear();
   }
@@ -1158,13 +1263,14 @@
 
   function applyArticleText(closeEditor = false) {
     const raw = document.getElementById('articleTextarea').value.trim();
+    const rawZh = document.getElementById('articleZhTextarea').value.trim();
     if (!raw) {
       alert("請先貼上或輸入英文短文！");
       return;
     }
     stopArticleMode();
     closeLookupCard();
-    splitArticleIntoSentences(raw);
+    splitArticleIntoSentences(raw, rawZh);
     saveArticlePrefs();
     renderArticleSentences();
     if (closeEditor) {
@@ -1180,7 +1286,9 @@
     renderSavedArticlesSelect();
     document.getElementById('articleTitleInput').value = '';
     document.getElementById('articleTextarea').value = '';
+    document.getElementById('articleZhTextarea').value = '';
     articleSentences = [];
+    articleSentenceZhList = [];
     articleSentenceIdx = 0;
     revealedBlindIndices.clear();
     saveArticlePrefs();
@@ -1238,6 +1346,7 @@
 
   function renderArticleSentences() {
     const box = document.getElementById('articleSentenceBox');
+    syncShowZhClass();
     updateArticleProgressLabel();
 
     if (articleSentences.length === 0) {
@@ -1249,14 +1358,16 @@
     const isWordTap = document.getElementById('articleWordTapOpt').checked;
 
     box.innerHTML = articleSentences.map((sentence, idx) => {
-      const classes = ['sentence-item'];
+      const classes = ['sentence-block'];
       if (idx === articleSentenceIdx) classes.push('active');
       if (isBlind) {
         classes.push('blind');
         if (revealedBlindIndices.has(idx)) classes.push('revealed');
       }
-      const contentHtml = formatSentenceContent(sentence, idx, isWordTap);
-      return `<span class="${classes.join(' ')}" id="art-sent-${idx}" onclick="onSentenceClick(${idx})">${contentHtml}</span> `;
+      const enHtml = formatSentenceContent(sentence, idx, isWordTap);
+      const zhLine = articleSentenceZhList[idx] || '';
+      const zhHtml = zhLine ? `<span class="sentence-zh">${escapeHtml(zhLine)}</span>` : '';
+      return `<div class="${classes.join(' ')}" id="art-sent-${idx}" onclick="onSentenceClick(${idx})"><span class="sentence-en">${enHtml}</span>${zhHtml}</div>`;
     }).join('');
 
     const activeEl = document.getElementById(`art-sent-${articleSentenceIdx}`);
