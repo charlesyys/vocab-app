@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="單字片語卡">
-<title>隨身單字片語卡</title>
+<meta name="apple-mobile-web-app-title" content="老查英文隨身聽">
+<title>老查英文隨身聽｜單字片語卡與短文聽力</title>
 <style>
   :root {
     --bg: #f3f5f9;
@@ -28,9 +28,9 @@
   .container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 12px; }
 
   /* 頂部標題與統計 */
-  header { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
-  header h1 { font-size: 1.25rem; font-weight: 700; color: var(--text-main); }
-  .header-right { display: flex; align-items: center; gap: 6px; }
+  header { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; gap: 8px; }
+  header h1 { font-size: 1.22rem; font-weight: 800; color: var(--text-main); letter-spacing: 0.2px; }
+  .header-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
   .offline-badge { font-size: 0.72rem; background: #d1fae5; color: #065f46; padding: 3px 8px; border-radius: 20px; font-weight: 700; display: none; }
   .offline-badge.ready { display: inline-block; }
   .stats-badge { font-size: 0.85rem; background: #e0e7ff; color: var(--primary-dark); padding: 4px 10px; border-radius: 20px; font-weight: 600; }
@@ -181,7 +181,7 @@
 
 <div class="container">
   <header>
-    <h1>📘 隨身單字片語卡</h1>
+    <h1>🎧 老查英文隨身聽</h1>
     <div class="header-right">
       <span class="offline-badge" id="offlineBadge">✓ 可離線</span>
       <span class="stats-badge" id="statsBadge">熟練 0 / 0</span>
@@ -403,6 +403,7 @@
 </div>
 
 <script>
+  const APP_NAME = "老查英文隨身聽";
   const PROGRESS_STORAGE_KEY = 'my_study_progress_v1';
 
   /* ==================== 註冊 Service Worker (sw.js) 支援離線使用 ==================== */
@@ -544,7 +545,6 @@
       utterance.voice = bestVoice;
       utterance.lang = bestVoice.lang || lang;
     }
-    // iOS Safari 語速微調，避免過快吞音
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     utterance.rate = isIOS ? Math.max(0.75, rate * 0.96) : rate;
     utterance.pitch = 1.0;
@@ -1111,10 +1111,10 @@
     const yyyy = now.getFullYear();
     const mm = String(now.getMonth() + 1).padStart(2, '0');
     const dd = String(now.getDate()).padStart(2, '0');
-    const fileName = `vocab_backup_${yyyy}-${mm}-${dd}.json`;
+    const fileName = `${APP_NAME}_字庫備份_${yyyy}-${mm}-${dd}.json`;
 
     const payload = {
-      app: "隨身單字片語卡",
+      app: APP_NAME,
       version: 1,
       exportedAt: now.toISOString(),
       count: vocabList.length,
@@ -1306,10 +1306,10 @@
     const yyyy = now.getFullYear();
     const mm = String(now.getMonth() + 1).padStart(2, '0');
     const dd = String(now.getDate()).padStart(2, '0');
-    const fileName = `articles_backup_${yyyy}-${mm}-${dd}.json`;
+    const fileName = `${APP_NAME}_短文庫備份_${yyyy}-${mm}-${dd}.json`;
 
     const payload = {
-      app: "隨身單字片語卡_短文庫",
+      app: `${APP_NAME}_短文庫`,
       version: 2,
       exportedAt: now.toISOString(),
       count: savedArticles.length,
