@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="單字片語卡">
 <title>隨身單字片語卡</title>
 <style>
   :root {
@@ -27,6 +30,9 @@
   /* 頂部標題與統計 */
   header { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
   header h1 { font-size: 1.25rem; font-weight: 700; color: var(--text-main); }
+  .header-right { display: flex; align-items: center; gap: 6px; }
+  .offline-badge { font-size: 0.72rem; background: #d1fae5; color: #065f46; padding: 3px 8px; border-radius: 20px; font-weight: 700; display: none; }
+  .offline-badge.ready { display: inline-block; }
   .stats-badge { font-size: 0.85rem; background: #e0e7ff; color: var(--primary-dark); padding: 4px 10px; border-radius: 20px; font-weight: 600; }
 
   /* 主模式切換列 */
@@ -36,6 +42,12 @@
 
   .mode-panel { display: none; flex-direction: column; gap: 12px; }
   .mode-panel.active { display: flex; }
+
+  /* 語音人聲選擇列（針對 iPhone / 電腦優化） */
+  .voice-bar { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.8rem; color: var(--text-sub); }
+  .voice-bar label { font-weight: 600; white-space: nowrap; }
+  .voice-bar select { flex: 1; padding: 4px 8px; font-size: 0.8rem; border-radius: 6px; border: 1px solid var(--border); background: #f8fafc; color: var(--text-main); max-width: 240px; }
+  .voice-test-btn { padding: 4px 9px; border-radius: 6px; border: 1px solid #bfdbfe; background: #eff6ff; color: var(--primary); font-size: 0.78rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
 
   /* 篩選列 */
   .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -170,7 +182,10 @@
 <div class="container">
   <header>
     <h1>📘 隨身單字片語卡</h1>
-    <span class="stats-badge" id="statsBadge">熟練 0 / 0</span>
+    <div class="header-right">
+      <span class="offline-badge" id="offlineBadge">✓ 可離線</span>
+      <span class="stats-badge" id="statsBadge">熟練 0 / 0</span>
+    </div>
   </header>
 
   <!-- 頂部模式切換：單字卡 / 文章聽力 -->
@@ -179,13 +194,22 @@
     <button class="mode-tab" id="tabArticle" onclick="switchMode('article')">🎧 短文連續聽力</button>
   </div>
 
-  <!-- 模式一：單字片語卡（完整保留原有功能） -->
+  <!-- 英語發音人聲選擇（自動優先挑選 iPhone 自然人聲） -->
+  <div class="voice-bar">
+    <label for="enVoiceSelect">🎙️ 英語人聲：</label>
+    <select id="enVoiceSelect" onchange="onSelectEnVoice(this.value)">
+      <option value="">自動優選自然人聲</option>
+    </select>
+    <button class="voice-test-btn" onclick="testSelectedVoice()">試聽</button>
+  </div>
+
+  <!-- 模式一：單字片語卡 -->
   <div class="mode-panel active" id="vocabModePanel">
     <!-- 篩選列 -->
     <div class="toolbar">
-      <button class="filter-btn active" onclick="setFilter('all', this)">全部字庫</button>
-      <button class="filter-btn" onclick="setFilter('learning', this)">待複習</button>
-      <button class="filter-btn" onclick="setFilter('mastered', this)">已熟練</button>
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">全部字庫</button>
+      <button class="filter-btn" data-filter="learning" onclick="setFilter('learning', this)">待複習</button>
+      <button class="filter-btn" data-filter="mastered" onclick="setFilter('mastered', this)">已熟練</button>
     </div>
 
     <!-- 自動循環聽力控制列（預設關閉） -->
@@ -195,11 +219,11 @@
         <span class="loop-status" id="loopStatusText">已停止</span>
       </div>
       <div class="loop-options">
-        <label><input type="checkbox" id="optSpeakZh"> 播放中文解釋</label>
-        <label><input type="checkbox" id="optAutoFlip" checked> 播例句時自動翻面</label>
+        <label><input type="checkbox" id="optSpeakZh" onchange="saveStudyProgress()"> 播放中文解釋</label>
+        <label><input type="checkbox" id="optAutoFlip" checked onchange="saveStudyProgress()"> 播例句時自動翻面</label>
         <label>
           停頓：
-          <select id="optPauseSec">
+          <select id="optPauseSec" onchange="saveStudyProgress()">
             <option value="1000">1.0 秒</option>
             <option value="1800" selected>1.8 秒</option>
             <option value="2800">2.8 秒</option>
@@ -343,7 +367,7 @@
           語速：
           <select id="articleRateSelect" onchange="saveArticlePrefs()">
             <option value="0.75">0.75x</option>
-            <option value="0.92" selected>0.92x</option>
+            <option value="0.90" selected>0.90x</option>
             <option value="1.0">1.0x</option>
             <option value="1.15">1.15x</option>
           </select>
@@ -373,12 +397,160 @@
     <div class="sentence-box show-zh" id="articleSentenceBox"></div>
 
     <div class="article-tip">
-      💡 預設點擊句子可直接跳轉重聽；勾選「🔍 點字查義」後，點擊任一英文單字即可發音、查詢中文，並一鍵存入你的單字庫。
+      💡 iPhone 提示：若想讓英文發音更接近真人，可至 iPhone「設定 → 輔助使用 → 朗讀內容 → 聲音 → 英文」下載「Ava (進階版)」或「Samantha (進階版)」，本網頁會自動優先套用。
     </div>
   </div>
 </div>
 
 <script>
+  const PROGRESS_STORAGE_KEY = 'my_study_progress_v1';
+
+  /* ==================== 註冊 Service Worker (sw.js) 支援離線使用 ==================== */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(() => {
+          const badge = document.getElementById('offlineBadge');
+          if (badge) badge.classList.add('ready');
+        })
+        .catch(() => {});
+    });
+  }
+
+  /* ==================== iPhone / 跨平台自然人聲優選引擎 ==================== */
+  let cachedVoices = [];
+  let preferredEnVoiceName = '';
+
+  const PREFERRED_EN_VOICE_KEYWORDS = [
+    'ava (premium)', 'ava (enhanced)', 'ava',
+    'samantha (premium)', 'samantha (enhanced)', 'samantha',
+    'allison (enhanced)', 'allison',
+    'nicky', 'evan', 'alex', 'aaron',
+    'google us english', 'aria', 'jenny', 'guy', 'natural'
+  ];
+
+  const AVOID_EN_VOICE_KEYWORDS = [
+    'fred', 'albert', 'bad news', 'bahh', 'bells', 'boing', 'bubbles',
+    'cellos', 'deranged', 'good news', 'hysterical', 'jester', 'junior',
+    'kathy', 'organ', 'ralph', 'superstar', 'trinoids', 'whisper', 'zarvox', 'compact'
+  ];
+
+  function loadAvailableVoices() {
+    if (!('speechSynthesis' in window)) return;
+    const list = window.speechSynthesis.getVoices() || [];
+    if (list.length > 0) {
+      cachedVoices = list;
+      populateEnVoiceDropdown();
+    }
+  }
+
+  if ('speechSynthesis' in window) {
+    loadAvailableVoices();
+    window.speechSynthesis.onvoiceschanged = loadAvailableVoices;
+  }
+
+  function scoreEnglishVoice(voice) {
+    const nameLower = (voice.name || '').toLowerCase();
+    const langLower = (voice.lang || '').toLowerCase();
+    if (!langLower.startsWith('en')) return -999;
+
+    let score = 0;
+    if (langLower === 'en-us' || langLower === 'en_us') score += 40;
+    else if (langLower.startsWith('en-gb') || langLower.startsWith('en-au')) score += 20;
+
+    if (nameLower.includes('premium')) score += 120;
+    if (nameLower.includes('enhanced')) score += 90;
+    if (nameLower.includes('natural')) score += 80;
+
+    for (let i = 0; i < PREFERRED_EN_VOICE_KEYWORDS.length; i++) {
+      if (nameLower.includes(PREFERRED_EN_VOICE_KEYWORDS[i])) {
+        score += (100 - i * 4);
+        break;
+      }
+    }
+    for (const bad of AVOID_EN_VOICE_KEYWORDS) {
+      if (nameLower.includes(bad)) {
+        score -= 150;
+      }
+    }
+    return score;
+  }
+
+  function getBestVoiceForLang(lang) {
+    if (cachedVoices.length === 0) {
+      cachedVoices = ('speechSynthesis' in window) ? (window.speechSynthesis.getVoices() || []) : [];
+    }
+    if (cachedVoices.length === 0) return null;
+
+    if (lang.startsWith('en')) {
+      if (preferredEnVoiceName) {
+        const manual = cachedVoices.find(v => v.name === preferredEnVoiceName);
+        if (manual) return manual;
+      }
+      let best = null;
+      let bestScore = -999;
+      for (const v of cachedVoices) {
+        const sc = scoreEnglishVoice(v);
+        if (sc > bestScore) {
+          bestScore = sc;
+          best = v;
+        }
+      }
+      return best;
+    }
+
+    if (lang.startsWith('zh')) {
+      const zhVoices = cachedVoices.filter(v => (v.lang || '').toLowerCase().startsWith('zh'));
+      const twVoice = zhVoices.find(v => (v.lang || '').toLowerCase().includes('tw') || (v.name || '').toLowerCase().includes('meijia'));
+      return twVoice || zhVoices[0] || null;
+    }
+
+    return null;
+  }
+
+  function populateEnVoiceDropdown() {
+    const select = document.getElementById('enVoiceSelect');
+    if (!select) return;
+
+    const enVoices = cachedVoices
+      .filter(v => (v.lang || '').toLowerCase().startsWith('en'))
+      .sort((a, b) => scoreEnglishVoice(b) - scoreEnglishVoice(a));
+
+    const autoBest = getBestVoiceForLang('en-US');
+    const autoLabel = autoBest ? `自動優選 (${autoBest.name})` : '自動優選自然人聲';
+
+    const opts = [`<option value="">${escapeHtml(autoLabel)}</option>`];
+    enVoices.forEach(v => {
+      const selected = v.name === preferredEnVoiceName ? ' selected' : '';
+      opts.push(`<option value="${escapeHtml(v.name)}"${selected}>${escapeHtml(v.name)} (${escapeHtml(v.lang)})</option>`);
+    });
+    select.innerHTML = opts.join('');
+  }
+
+  function onSelectEnVoice(voiceName) {
+    preferredEnVoiceName = voiceName || '';
+    saveStudyProgress();
+    testSelectedVoice();
+  }
+
+  function testSelectedVoice() {
+    speakTextOnce("Welcome! Let's practice English listening together.", 0.90);
+  }
+
+  function configureUtterance(utterance, lang, rate) {
+    utterance.lang = lang;
+    const bestVoice = getBestVoiceForLang(lang);
+    if (bestVoice) {
+      utterance.voice = bestVoice;
+      utterance.lang = bestVoice.lang || lang;
+    }
+    // iOS Safari 語速微調，避免過快吞音
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    utterance.rate = isIOS ? Math.max(0.75, rate * 0.96) : rate;
+    utterance.pitch = 1.0;
+  }
+
+  /* ==================== 單字庫與短文庫預設資料 ==================== */
   const defaultVocab = [
     { id: 1, type: "片語", word: "figure out", meaning: "想出、理解、解決", exEn: "We need to figure out why the signal drops.", exZh: "我們需要找出訊號下降的原因。", mastered: false },
     { id: 2, type: "片語", word: "rule out", meaning: "排除（可能性）", exEn: "We can rule out a power supply issue.", exZh: "我們可以排除電源供應的問題。", mastered: false },
@@ -448,10 +620,14 @@
   ];
 
   let vocabList = JSON.parse(localStorage.getItem('my_vocab_v1')) || defaultVocab;
-  let currentFilter = 'all';
-  let currentIndex = 0;
+  let savedProgress = JSON.parse(localStorage.getItem(PROGRESS_STORAGE_KEY) || 'null') || {};
+  let activeMode = savedProgress.activeMode === 'article' ? 'article' : 'vocab';
+  let currentFilter = ['all', 'learning', 'mastered'].includes(savedProgress.currentFilter) ? savedProgress.currentFilter : 'all';
+  let currentIndex = typeof savedProgress.currentIndex === 'number' ? savedProgress.currentIndex : 0;
+  let currentWordId = savedProgress.currentWordId ?? null;
+  preferredEnVoiceName = typeof savedProgress.preferredEnVoiceName === 'string' ? savedProgress.preferredEnVoiceName : '';
 
-  // 共用安全單步狀態機（無 while 迴圈，防止瀏覽器阻塞）
+  // 共用安全單步狀態機
   let isLooping = false;
   let isArticlePlaying = false;
   let loopGeneration = 0;
@@ -462,7 +638,7 @@
   // 短文聽力、短文筆記庫與點字查詢狀態
   let articleSentences = [];
   let articleSentenceZhList = [];
-  let articleSentenceIdx = 0;
+  let articleSentenceIdx = typeof savedProgress.articleSentenceIdx === 'number' ? savedProgress.articleSentenceIdx : 0;
   let revealedBlindIndices = new Set();
   let translationCache = JSON.parse(localStorage.getItem('my_word_trans_cache_v1') || '{}');
   let currentLookupData = null;
@@ -471,7 +647,60 @@
     savedArticles = defaultSavedArticles.map(item => ({ ...item }));
     localStorage.setItem('my_articles_v1', JSON.stringify(savedArticles));
   }
-  let activeSavedArticleId = '';
+  let activeSavedArticleId = savedProgress.activeSavedArticleId ? String(savedProgress.activeSavedArticleId) : '';
+
+  function saveStudyProgress() {
+    const list = getFilteredList();
+    if (list.length > 0 && currentIndex >= 0 && currentIndex < list.length) {
+      currentWordId = list[currentIndex].id;
+    }
+    const progressData = {
+      activeMode,
+      currentFilter,
+      currentIndex,
+      currentWordId,
+      activeSavedArticleId,
+      articleSentenceIdx,
+      preferredEnVoiceName,
+      optSpeakZh: Boolean(document.getElementById('optSpeakZh')?.checked),
+      optAutoFlip: document.getElementById('optAutoFlip') ? Boolean(document.getElementById('optAutoFlip').checked) : true,
+      optPauseSec: document.getElementById('optPauseSec')?.value || '1800',
+      updatedAt: Date.now()
+    };
+    localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(progressData));
+  }
+
+  function restoreVocabPositionFromProgress() {
+    if (typeof savedProgress.optSpeakZh === 'boolean') {
+      document.getElementById('optSpeakZh').checked = savedProgress.optSpeakZh;
+    }
+    if (typeof savedProgress.optAutoFlip === 'boolean') {
+      document.getElementById('optAutoFlip').checked = savedProgress.optAutoFlip;
+    }
+    if (savedProgress.optPauseSec) {
+      document.getElementById('optPauseSec').value = savedProgress.optPauseSec;
+    }
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.filter === currentFilter);
+    });
+
+    const list = getFilteredList();
+    if (list.length === 0) {
+      currentIndex = 0;
+      return;
+    }
+    if (currentWordId !== null) {
+      const foundIdx = list.findIndex(item => String(item.id) === String(currentWordId));
+      if (foundIdx >= 0) {
+        currentIndex = foundIdx;
+        return;
+      }
+    }
+    if (currentIndex >= list.length || currentIndex < 0) {
+      currentIndex = Math.max(0, Math.min(currentIndex, list.length - 1));
+    }
+  }
 
   function saveToStorage() {
     localStorage.setItem('my_vocab_v1', JSON.stringify(vocabList));
@@ -529,11 +758,14 @@
   }
 
   function switchMode(mode) {
-    const isVocab = mode === 'vocab';
+    activeMode = mode === 'article' ? 'article' : 'vocab';
+    const isVocab = activeMode === 'vocab';
     document.getElementById('tabVocab').classList.toggle('active', isVocab);
     document.getElementById('tabArticle').classList.toggle('active', !isVocab);
     document.getElementById('vocabModePanel').classList.toggle('active', isVocab);
     document.getElementById('articleModePanel').classList.toggle('active', !isVocab);
+
+    saveStudyProgress();
 
     if (isVocab) {
       stopArticleMode();
@@ -589,8 +821,7 @@
       if (!isStillActiveFn() || gen !== loopGeneration) return;
 
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = lang;
-      utterance.rate = rate;
+      configureUtterance(utterance, lang, rate);
       activeUtterance = utterance;
 
       let finished = false;
@@ -645,7 +876,7 @@
     document.getElementById('flashcard').classList.remove('is-flipped');
 
     statusEl.textContent = `朗讀英文 (${currentIndex + 1}/${list.length})`;
-    playStepUtterance(item.word, 'en-US', 0.92, gen, activeFn, () => {
+    playStepUtterance(item.word, 'en-US', 0.90, gen, activeFn, () => {
       stepTimerId = setTimeout(() => {
         if (!isLooping || gen !== loopGeneration) return;
 
@@ -677,7 +908,7 @@
             document.getElementById('flashcard').classList.add('is-flipped');
           }
           statusEl.textContent = `朗讀例句 (${currentIndex + 1}/${list.length})`;
-          playStepUtterance(item.exEn, 'en-US', 0.92, gen, activeFn, () => {
+          playStepUtterance(item.exEn, 'en-US', 0.90, gen, activeFn, () => {
             stepTimerId = setTimeout(afterExample, Math.min(pauseMs, 1000));
           });
         } else {
@@ -703,6 +934,7 @@
       document.getElementById('meaningBack').textContent = "請切換分類或新增單字";
       document.getElementById('exampleEn').textContent = "";
       document.getElementById('exampleZh').textContent = "";
+      saveStudyProgress();
       return;
     }
 
@@ -710,6 +942,9 @@
     if (currentIndex < 0) currentIndex = list.length - 1;
 
     const item = list[currentIndex];
+    currentWordId = item.id;
+    saveStudyProgress();
+
     document.getElementById('cardType').textContent = `${item.type} (${currentIndex + 1}/${list.length})`;
     document.getElementById('wordFront').textContent = item.word;
     document.getElementById('wordSmallBack').textContent = item.word;
@@ -752,6 +987,7 @@
   function setFilter(filter, btn) {
     currentFilter = filter;
     currentIndex = 0;
+    currentWordId = null;
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     renderCard(true);
@@ -771,13 +1007,15 @@
     }
   }
 
-  function speakTextOnce(text, rate = 0.92) {
+  function speakTextOnce(text, rate = 0.90) {
     if (!text || !('speechSynthesis' in window)) return;
     try {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
-      utterance.rate = rate;
+      configureUtterance(utterance, 'en-US', rate);
       window.speechSynthesis.speak(utterance);
     } catch (e) {}
   }
@@ -790,7 +1028,7 @@
     if (list.length === 0) return;
     const item = list[currentIndex];
     const textToSpeak = (mode === 'example' && item.exEn) ? item.exEn : item.word;
-    speakTextOnce(textToSpeak, 0.92);
+    speakTextOnce(textToSpeak, 0.90);
   }
 
   function toggleManage() {
@@ -1028,7 +1266,10 @@
 
   function onSelectSavedArticle(idValue) {
     activeSavedArticleId = idValue || '';
-    if (!idValue) return;
+    if (!idValue) {
+      saveStudyProgress();
+      return;
+    }
 
     const found = savedArticles.find(item => String(item.id) === String(idValue));
     if (!found) return;
@@ -1038,7 +1279,7 @@
     document.getElementById('articleTitleInput').value = found.title;
     document.getElementById('articleTextarea').value = found.text;
     document.getElementById('articleZhTextarea').value = found.zhText || '';
-    splitArticleIntoSentences(found.text, found.zhText || '');
+    splitArticleIntoSentences(found.text, found.zhText || '', 0);
     saveArticlePrefs();
     renderArticleSentences();
   }
@@ -1055,6 +1296,7 @@
     savedArticles = savedArticles.filter(item => String(item.id) !== String(activeSavedArticleId));
     activeSavedArticleId = '';
     saveSavedArticlesToStorage();
+    saveStudyProgress();
     renderSavedArticlesSelect();
     alert(`已刪除「${found.title}」。`);
   }
@@ -1193,7 +1435,8 @@
 
     syncShowZhClass();
     renderSavedArticlesSelect();
-    splitArticleIntoSentences(text, document.getElementById('articleZhTextarea').value);
+    const initialSentIdx = typeof savedProgress.articleSentenceIdx === 'number' ? savedProgress.articleSentenceIdx : 0;
+    splitArticleIntoSentences(text, document.getElementById('articleZhTextarea').value, initialSentIdx);
     renderArticleSentences();
   }
 
@@ -1208,6 +1451,7 @@
       wordTap: document.getElementById('articleWordTapOpt').checked
     };
     localStorage.setItem('my_article_v1', JSON.stringify(payload));
+    saveStudyProgress();
   }
 
   function syncShowZhClass() {
@@ -1237,7 +1481,7 @@
     return parts;
   }
 
-  function splitArticleIntoSentences(rawText, rawZhText = '') {
+  function splitArticleIntoSentences(rawText, rawZhText = '', preserveIdx = 0) {
     const normalized = rawText.replace(/\r\n/g, '\n').trim();
     if (!normalized) {
       articleSentences = [];
@@ -1253,7 +1497,7 @@
     const zhParts = parseZhSegments(rawZhText, articleSentences.length);
     articleSentenceZhList = articleSentences.map((_, idx) => zhParts[idx] || '');
 
-    articleSentenceIdx = 0;
+    articleSentenceIdx = (preserveIdx >= 0 && preserveIdx < articleSentences.length) ? preserveIdx : 0;
     revealedBlindIndices.clear();
   }
 
@@ -1270,7 +1514,7 @@
     }
     stopArticleMode();
     closeLookupCard();
-    splitArticleIntoSentences(raw, rawZh);
+    splitArticleIntoSentences(raw, rawZh, 0);
     saveArticlePrefs();
     renderArticleSentences();
     if (closeEditor) {
@@ -1348,6 +1592,7 @@
     const box = document.getElementById('articleSentenceBox');
     syncShowZhClass();
     updateArticleProgressLabel();
+    saveStudyProgress();
 
     if (articleSentences.length === 0) {
       box.innerHTML = '<span style="color:#64748b;">尚無文章內容，請點選右上角「貼上／編輯文章」輸入英文短文。</span>';
@@ -1400,7 +1645,7 @@
     document.querySelectorAll('.word-token.selected').forEach(node => node.classList.remove('selected'));
     if (el) el.classList.add('selected');
 
-    speakTextOnce(word, 0.9);
+    speakTextOnce(word, 0.90);
 
     const card = document.getElementById('wordLookupCard');
     const wordEl = document.getElementById('lookupWordText');
@@ -1464,7 +1709,7 @@
 
   function speakLookupWord() {
     if (currentLookupData && currentLookupData.word) {
-      speakTextOnce(currentLookupData.word, 0.9);
+      speakTextOnce(currentLookupData.word, 0.90);
     }
   }
 
@@ -1549,7 +1794,7 @@
     renderArticleSentences();
 
     const gen = loopGeneration;
-    const rate = parseFloat(document.getElementById('articleRateSelect').value) || 0.92;
+    const rate = parseFloat(document.getElementById('articleRateSelect').value) || 0.90;
     const sentenceText = articleSentences[articleSentenceIdx];
     const activeFn = () => isArticlePlaying;
 
@@ -1577,14 +1822,22 @@
     if (isArticlePlaying) playArticleFromCurrent();
   }
 
-  // 離開分頁時自動停止語音
+  // 離開或背景切換分頁時自動儲存進度並停止語音
   window.addEventListener('beforeunload', () => {
+    saveStudyProgress();
     resetTimersAndSpeech();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      saveStudyProgress();
+    }
   });
 
   updateStats();
-  renderCard(true);
+  restoreVocabPositionFromProgress();
+  populateEnVoiceDropdown();
   initArticleModule();
+  switchMode(activeMode);
 </script>
 </body>
 </html>
